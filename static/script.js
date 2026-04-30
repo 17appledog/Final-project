@@ -171,18 +171,11 @@ form.addEventListener("submit", async (e) => {
   try {
     console.log("🚀 Sending prediction request to:", `${API_BASE}/api/predict`);
     
-    // Add a 10-second timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
     const res = await fetch(`${API_BASE}/api/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: controller.signal
+      body: JSON.stringify(payload)
     });
-
-    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
