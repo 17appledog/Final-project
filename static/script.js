@@ -38,7 +38,7 @@ themeToggle.addEventListener("click", () => {
 // ─── Health check ──────────────────────────────────
 (async function checkHealth() {
   try {
-    const res = await fetch(`${API_BASE}/api/predict`, { method: "GET" });
+    const res = await fetch(`${API_BASE}/api/health`, { method: "GET" });
     if (res.ok) {
       const data = await res.json();
       if (!data.model_loaded) {
@@ -195,7 +195,9 @@ form.addEventListener("submit", async (e) => {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       if (res.status === 503) {
-        throw new Error("Model is still initializing or training. Please wait a few seconds and try again.");
+        showError("⏳ Cold starting... retrying in 3s...");
+        setTimeout(() => form.dispatchEvent(new Event("submit")), 3000);
+        return;
       }
       throw new Error(err.detail || `Server error ${res.status}`);
     }
