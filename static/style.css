@@ -682,49 +682,53 @@ label .tooltip:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* ---------- Form card with RGB side stripe + shadow ---------- */
+/* ---------- Card with running light around the border ---------- */
 .rgb-side-card {
   position: relative;
   padding: 2rem;
-  border-radius: 16px;
-  background: rgba(17, 17, 30, 0.8);          /* dark glass */
-  backdrop-filter: blur(12px);
-  box-shadow: 0 0 30px rgba(167, 139, 250, 0.25),    /* soft purple glow */
-              0 20px 40px rgba(0, 0, 0, 0.4);         /* depth */
-  overflow: hidden;
-  transition: box-shadow 0.8s ease;
+  border-radius: 18px;
+  background: rgba(17, 17, 30, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 1;
+  overflow: visible;             /* Allow border glow to show */
 }
 
-/* The animated RGB line on the left */
+/* The moving light – a pseudo-element bigger than the card */
 .rgb-side-card::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 6px;
-  height: 100%;
-  background: linear-gradient(
-    270deg,
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
     #ff0080, #ff8c00, #40e0d0, #7928ca, #00f2fe, #ff0080
   );
-  background-size: 400% 400%;
-  animation: rgbShift 4s linear infinite;
-  z-index: 2;
-  border-radius: 16px 0 0 16px;   /* match card rounding */
+  border-radius: 20px;
+  animation: spinLight 5s linear infinite;
+  filter: blur(8px);
 }
 
-/* Rotating colour */
-@keyframes rgbShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* Inner mask to keep the card background clean */
+.rgb-side-card::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: var(--surface);
+  border-radius: 16px;
+  z-index: -1;
 }
 
-/* Light mode overrides */
+/* Rotation keyframe */
+@keyframes spinLight {
+  100% { transform: rotate(360deg); }
+}
+
+/* Light mode adjustments */
 [data-theme="light"] .rgb-side-card {
   background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 30px rgba(167, 139, 250, 0.1),
-              0 20px 40px rgba(0, 0, 0, 0.15);
+}
+[data-theme="light"] .rgb-side-card::after {
+  background: rgba(255, 255, 255, 0.95);
 }
 
 /* Custom dropdown container */
