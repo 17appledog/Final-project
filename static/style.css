@@ -1248,6 +1248,14 @@ label .tooltip:hover {
   background: #ffffff !important;
 }
 
+/* Force solid dark background on step cards */
+.step-card.rgb-side-card {
+  background: #16162a !important;
+}
+[data-theme="light"] .step-card.rgb-side-card {
+  background: #ffffff !important;
+}
+
 /* Custom dropdown container */
 .custom-dropdown {
   position: relative;
