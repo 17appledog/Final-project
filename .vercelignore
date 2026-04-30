@@ -1,0 +1,8 @@
+.venv
+venv
+__pycache__
+train.csv
+train_and_save.py
+extract_artefacts.py
+models/*.pkl
+.git

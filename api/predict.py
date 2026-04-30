@@ -10,9 +10,8 @@ Returns:  {"predicted_price": float}
 from __future__ import annotations
 
 import os
-import joblib
+import json
 import numpy as np
-import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -46,19 +45,23 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 def _load():
     from xgboost import XGBRegressor
     model_json = os.path.join(MODELS_DIR, "xgb_model.json")
-    model_pkl  = os.path.join(MODELS_DIR, "xgb_model.pkl")
 
-    if os.path.exists(model_json):
-        # Native format: faster load AND faster predict
-        model = XGBRegressor()
-        model.load_model(model_json)
-    else:
-        model = joblib.load(model_pkl)
+    # Native format: faster load AND faster predict
+    model = XGBRegressor()
+    model.load_model(model_json)
 
-    scaler     = joblib.load(os.path.join(MODELS_DIR, "scaler.pkl"))
-    les        = joblib.load(os.path.join(MODELS_DIR, "label_encoders.pkl"))
-    feat_names = joblib.load(os.path.join(MODELS_DIR, "feature_names.pkl"))
-    meta       = joblib.load(os.path.join(MODELS_DIR, "default_values.pkl"))
+    with open(os.path.join(MODELS_DIR, "scaler.json")) as f:
+        scaler = json.load(f)
+    
+    with open(os.path.join(MODELS_DIR, "label_encoders.json")) as f:
+        les = json.load(f)
+        
+    with open(os.path.join(MODELS_DIR, "feature_names.json")) as f:
+        feat_names = json.load(f)
+        
+    with open(os.path.join(MODELS_DIR, "meta.json")) as f:
+        meta = json.load(f)
+        
     return model, scaler, les, feat_names, meta
 
 
@@ -104,9 +107,9 @@ class HouseFeatures(BaseModel):
 # ──────────────────────────────────────────────
 # Pre-processing helpers (mirror train_and_save.py)
 # ──────────────────────────────────────────────
-def _build_row(feat: HouseFeatures) -> pd.DataFrame:
+def _build_row(feat: HouseFeatures) -> np.ndarray:
     """
-    Construct a 1-row DataFrame with ALL columns expected by the model,
+    Construct a 1-row numpy array with ALL columns expected by the model,
     starting from default values and overriding with the 12 user inputs.
     """
     row = dict(DEFAULT_VALUES)  # copy medians / modes
@@ -122,14 +125,14 @@ def _build_row(feat: HouseFeatures) -> pd.DataFrame:
     row["LotArea"]       = feat.LotArea
     row["TotRmsAbvGrd"]  = feat.TotRmsAbvGrd
 
-    # Neighborhood – apply the same LabelEncoder used at training
+    # Neighborhood – apply the same LabelEncoder logic used at training
     nbhd_raw = feat.Neighborhood
     if "Neighborhood" in LABEL_ENCODERS:
-        le = LABEL_ENCODERS["Neighborhood"]
-        if nbhd_raw in le.classes_:
-            row["Neighborhood"] = int(le.transform([nbhd_raw])[0])
+        classes = LABEL_ENCODERS["Neighborhood"]
+        if nbhd_raw in classes:
+            row["Neighborhood"] = classes.index(nbhd_raw)
         else:
-            row["Neighborhood"] = int(le.transform([le.classes_[0]])[0])
+            row["Neighborhood"] = classes.index(classes[0])
     else:
         row["Neighborhood"] = 0
 
@@ -169,17 +172,30 @@ def _build_row(feat: HouseFeatures) -> pd.DataFrame:
     row["TotalRooms"]   = feat.TotRmsAbvGrd + feat.FullBath + row.get("HalfBath", 0)
     row["AvgRoomSize"]  = feat.GrLivArea / (feat.TotRmsAbvGrd + 1)
 
-    # Build DataFrame with exact column order
-    df = pd.DataFrame([row])[FEATURE_NAMES]
-    return df
+    # Build numpy array with exact column order
+    row_values = [row.get(col, 0) for col in FEATURE_NAMES]
+    return np.array([row_values], dtype=np.float32)
 
 
-def _preprocess(df: pd.DataFrame) -> np.ndarray:
+
+def _preprocess(X: np.ndarray) -> np.ndarray:
     """Apply log1p + RobustScaler identical to training."""
-    for col in SKEW_COLS:
-        if col in df.columns:
-            df[col] = np.log1p(df[col].clip(lower=0))
-    return SCALER.transform(df)
+    # Find indices for SKEW_COLS
+    skew_indices = [FEATURE_NAMES.index(col) for col in SKEW_COLS if col in FEATURE_NAMES]
+    
+    # log1p transformation on SKEW_COLS
+    for idx in skew_indices:
+        X[0, idx] = np.log1p(max(0, X[0, idx]))
+        
+    # RobustScaler transformation
+    # (X - center) / scale
+    center = np.array(SCALER["center"])
+    scale = np.array(SCALER["scale"])
+    
+    # Avoid division by zero
+    scale[scale == 0] = 1.0
+    
+    return (X - center) / scale
 
 
 # ──────────────────────────────────────────────
