@@ -698,15 +698,15 @@ label .tooltip:hover {
   transform: rotate(180deg);
 }
 
-/* Dropdown list */
+/* Dropdown list – NO scroll, NO active highlight */
 .custom-dropdown__list {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  max-height: 220px;
-  overflow-y: auto;
-  background: #1e1e2f;  /* dark background */
+  max-height: none;              /* No fixed height → no scrollbar */
+  overflow: visible;             /* Never show scrollbar */
+  background: #1e1e2f;          /* match your dark background */
   border-radius: 12px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   list-style: none;
@@ -731,16 +731,18 @@ label .tooltip:hover {
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s;
-  color: #e5e7eb;  /* light text for dark mode */
+  color: #e5e7eb;               /* light text */
 }
 
+/* Hover effect ONLY – all items identical otherwise */
 .custom-dropdown__list li:hover {
   background: rgba(167, 139, 250, 0.2);
 }
 
+/* Remove the active style – all items look the same after selection */
 .custom-dropdown__list li.active {
-  background: rgba(167, 139, 250, 0.4);
-  color: #fff;
+  background: transparent;
+  color: inherit;
 }
 
 /* Light mode overrides */

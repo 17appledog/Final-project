@@ -263,14 +263,11 @@ document.querySelectorAll(".feat-bar").forEach(bar => {
     }
   });
 
-  // Handle selection
+  // Handle selection (no active class, no highlight)
   list.querySelectorAll('li').forEach(item => {
     item.addEventListener('click', () => {
       // Update display text
       display.textContent = item.textContent;
-      // Update active class
-      list.querySelectorAll('li').forEach(li => li.classList.remove('active'));
-      item.classList.add('active');
       // Sync hidden select
       hiddenSelect.value = item.dataset.value;
       // Close dropdown
@@ -278,8 +275,8 @@ document.querySelectorAll(".feat-bar").forEach(bar => {
     });
   });
 
-  // Initial sync
-  const defaultOption = list.querySelector('li.active') || list.querySelector('li[data-value="NAmes"]');
+  // Preselect NAmes (only set display, no active class)
+  const defaultOption = list.querySelector('li[data-value="NAmes"]');
   if (defaultOption) {
     display.textContent = defaultOption.textContent;
     hiddenSelect.value = defaultOption.dataset.value;
