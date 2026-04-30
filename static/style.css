@@ -1237,6 +1237,16 @@ label .tooltip:hover {
   background: #ffffff;
 }
 
+/* Force solid dark background on stats cards */
+.stat.rgb-side-card {
+  background: #16162a !important;
+  /* optional: adjust padding if 2rem is too big for stats */
+  padding: 1.5rem 2rem;
+}
+[data-theme="light"] .stat.rgb-side-card {
+  background: #ffffff !important;
+}
+
 /* Custom dropdown container */
 .custom-dropdown {
   position: relative;
