@@ -1237,13 +1237,14 @@ label .tooltip:hover {
   background: #ffffff;
 }
 
-/* Force solid dark background on stats cards */
-.stat.rgb-side-card {
+/* Force solid dark background on stats bar */
+.stats-bar.rgb-side-card {
   background: #16162a !important;
   /* optional: adjust padding if 2rem is too big for stats */
-  padding: 1.5rem 2rem;
+  padding: 24px 32px;
+  border: none;
 }
-[data-theme="light"] .stat.rgb-side-card {
+[data-theme="light"] .stats-bar.rgb-side-card {
   background: #ffffff !important;
 }
 
