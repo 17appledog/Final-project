@@ -609,3 +609,9 @@ label .tooltip:hover {
   from { opacity: 0; transform: translateY(-16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Fix unreadable dropdown options in dark mode */
+select option {
+    color: #000000;          /* black text */
+    background-color: #ffffff; /* white background – overrides any dark style */
+}
