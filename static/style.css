@@ -682,24 +682,20 @@ label .tooltip:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* ── Final border-only animated light ── */
+/* ---------- Card with running light around the border (SOLID) ---------- */
 .rgb-side-card {
   position: relative;
   padding: 2rem;
   border-radius: 18px;
-  background: #16162a;             /* solid dark – NOT transparent */
+  background: #16162a;          /* ← solid dark, NO transparency */
   z-index: 1;
-  /* NO backdrop-filter, NO box-shadow */
 }
 
-/* Rotating rainbow border light */
+/* The moving light – behind the card but clipped to border */
 .rgb-side-card::before {
   content: "";
   position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
+  top: -3px; left: -3px; right: -3px; bottom: -3px;
   z-index: -1;
   background: conic-gradient(
     from 0deg at 50% 50%,
@@ -710,12 +706,12 @@ label .tooltip:hover {
   filter: blur(4px);
 }
 
-/* Inner solid mask – hides the light inside, only border remains */
+/* Inner mask – blocks the light in the center */
 .rgb-side-card::after {
   content: "";
   position: absolute;
-  inset: 3px;                     /* controls border thickness */
-  background: #16162a;            /* EXACT card background colour */
+  inset: 3px;
+  background: #16162a;          /* ← exact same colour as the card */
   border-radius: 16px;
   z-index: -1;
 }
@@ -724,7 +720,7 @@ label .tooltip:hover {
   100% { transform: rotate(360deg); }
 }
 
-/* ── Light mode ── */
+/* Light mode */
 [data-theme="light"] .rgb-side-card {
   background: #ffffff;
 }
