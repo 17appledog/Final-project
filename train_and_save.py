@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import skew
 from sklearn.preprocessing import RobustScaler, LabelEncoder
+from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor
 
 warnings.filterwarnings("ignore")
@@ -90,25 +91,36 @@ df["TotalRooms"]    = df["TotRmsAbvGrd"] + df["FullBath"] + df["HalfBath"]
 df["AvgRoomSize"]   = df["GrLivArea"] / (df["TotRmsAbvGrd"] + 1)
 
 # ──────────────────────────────────────────────
-# 4. Label-encode categoricals
+# 4. Log-transform skewed CONTINUOUS features
 # ──────────────────────────────────────────────
+# Identify truly continuous features (exclude ordinal, binary, and discrete counts)
+cont_features = [
+    "LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF",
+    "TotalBsmtSF", "1stFlrSF", "2ndFlrSF", "LowQualFinSF", "GrLivArea", "GarageArea",
+    "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "3SsnPorch", "ScreenPorch", "PoolArea", "MiscVal",
+    # Engineered continuous features
+    "TotalSF", "TotalPorchSF", "LotPerSF", "GarageRatio", "QualPerSF", "AvgRoomSize"
+]
+cont_features = [f for f in cont_features if f in df.columns]
+
+skewness = df[cont_features].apply(lambda x: skew(x.dropna()))
+high_skew = skewness[skewness.abs() > 0.5].index.tolist()
+SKEW_COLS = high_skew  # save for predict.py reference
+
+print(f"Applying log1p to {len(SKEW_COLS)} skewed continuous features...")
+for col in SKEW_COLS:
+    df[col] = np.log1p(df[col].clip(lower=0))
+
+# ──────────────────────────────────────────────
+# 5. Label-encode categoricals
+# ──────────────────────────────────────────────
+# Now categoricals are encoded AFTER log-transform checks, avoiding corruption
 cat_cols = df.select_dtypes(include=["object"]).columns.tolist()
 label_encoders: dict[str, LabelEncoder] = {}
 for col in cat_cols:
     le = LabelEncoder()
     df[col] = le.fit_transform(df[col].astype(str))
     label_encoders[col] = le
-
-# ──────────────────────────────────────────────
-# 5. Log-transform skewed numeric features
-# ──────────────────────────────────────────────
-numeric_feats = df.select_dtypes(include=[np.number]).columns.tolist()
-skewness = df[numeric_feats].apply(lambda x: skew(x.dropna()))
-high_skew = skewness[skewness.abs() > 0.5].index.tolist()
-SKEW_COLS = high_skew  # save for predict.py reference (stored in feature_names)
-
-for col in high_skew:
-    df[col] = np.log1p(df[col].clip(lower=0))
 
 # ──────────────────────────────────────────────
 # 6. Scale
@@ -126,23 +138,33 @@ for col in df.columns:
     default_values[col] = float(df[col].median())
 
 # ──────────────────────────────────────────────
-# 8. Train XGBoost
+# 8. Train XGBoost with Early Stopping
 # ──────────────────────────────────────────────
-print("Training XGBoost …")
+# Split into train/validation for early stopping
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+print(f"Training XGBoost (Early Stopping, n_estimators=300) …")
 xgb = XGBRegressor(
     colsample_bytree=0.5,
-    learning_rate=0.05,  # increased from 0.01 → fewer trees needed
+    learning_rate=0.05,
     max_depth=4,
-    n_estimators=500,   # reduced from 2000 → 4x faster prediction
+    n_estimators=300,   # Reduced; early stopping will handle convergence
     subsample=0.8,
     reg_alpha=0.1,
     reg_lambda=1.0,
     random_state=42,
-    n_jobs=1,           # single thread → consistent fast inference
-    tree_method="hist", # faster training & inference
+    n_jobs=1,           # reproducible results
+    tree_method="hist", 
+    early_stopping_rounds=20,
     verbosity=0,
 )
-xgb.fit(X, y)
+
+xgb.fit(
+    X_train, y_train,
+    eval_set=[(X_val, y_val)],
+    verbose=False
+)
+print(f"  Stopped at iteration: {xgb.best_iteration}")
 
 # ──────────────────────────────────────────────
 # 9. Save artefacts
@@ -158,7 +180,7 @@ joblib.dump({
     "skew_cols": SKEW_COLS,
 }, os.path.join(MODELS_DIR, "default_values.pkl"))
 
-print("\n✅  All artefacts saved to ./models/")
+print("\n[OK] All artefacts saved to ./models/")
 print(f"   Features : {len(feature_names)}")
 print(f"   Skew cols: {len(SKEW_COLS)}")
 
@@ -167,5 +189,5 @@ import sklearn.metrics as m
 preds = xgb.predict(X)
 rmse = np.sqrt(m.mean_squared_error(y, preds))
 r2   = m.r2_score(y, preds)
-print(f"   Train RMSE (log): {rmse:.4f}   R²: {r2:.4f}")
+print(f"   Train RMSE (log): {rmse:.4f}   R2: {r2:.4f}")
 print("\nDone. Run the API with:  uvicorn api.predict:app --reload")
