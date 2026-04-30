@@ -1,16 +1,13 @@
 """
 api/predict.py
 --------------
-Pure Python serverless function for Vercel.
-Endpoint: POST /api/predict
-Body:     JSON with the 12 user-facing fields
-Returns:  {"predicted_price": float}
+Pure Python serverless function for Vercel using ONNX.
 """
 import os
 import json
 import numpy as np
+import onnxruntime as ort
 from http.server import BaseHTTPRequestHandler
-import urllib.parse
 
 # ──────────────────────────────────────────────
 # Load artefacts once at cold-start
@@ -19,11 +16,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 def _load():
-    from xgboost import XGBRegressor
-    model_json = os.path.join(MODELS_DIR, "xgb_model.json")
-
-    model = XGBRegressor()
-    model.load_model(model_json)
+    onnx_path = os.path.join(MODELS_DIR, "xgb_model.onnx")
+    
+    # Load ONNX session
+    # Note: onnxruntime is much lighter than xgboost
+    session = ort.InferenceSession(onnx_path)
 
     with open(os.path.join(MODELS_DIR, "scaler.json")) as f:
         scaler = json.load(f)
@@ -37,19 +34,19 @@ def _load():
     with open(os.path.join(MODELS_DIR, "meta.json")) as f:
         meta = json.load(f)
         
-    return model, scaler, les, feat_names, meta
+    return session, scaler, les, feat_names, meta
 
 LOAD_ERROR = None
 try:
-    print("[INFO] Loading model artefacts...")
-    XGB_MODEL, SCALER, LABEL_ENCODERS, FEATURE_NAMES, META = _load()
+    print("[INFO] Loading ONNX model...")
+    SESSION, SCALER, LABEL_ENCODERS, FEATURE_NAMES, META = _load()
     DEFAULT_VALUES = META["default_values"]
     SKEW_COLS      = META["skew_cols"]
-    print("[OK] Models loaded successfully.")
+    print("[OK] ONNX model loaded successfully.")
 except Exception as exc:
     LOAD_ERROR = str(exc)
     print(f"[ERROR] Could not load models: {exc}")
-    XGB_MODEL = SCALER = LABEL_ENCODERS = FEATURE_NAMES = DEFAULT_VALUES = SKEW_COLS = None
+    SESSION = SCALER = LABEL_ENCODERS = FEATURE_NAMES = DEFAULT_VALUES = SKEW_COLS = None
 
 def _build_row(feat: dict) -> np.ndarray:
     row = dict(DEFAULT_VALUES)
@@ -133,7 +130,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        res = {"status": "ok", "model_loaded": XGB_MODEL is not None}
+        res = {"status": "ok", "model_loaded": SESSION is not None, "error": LOAD_ERROR}
         self.wfile.write(json.dumps(res).encode('utf-8'))
 
     def do_POST(self):
@@ -148,7 +145,7 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(b'{"detail": "Invalid JSON"}')
             return
 
-        if XGB_MODEL is None:
+        if SESSION is None:
             self.send_response(503)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
@@ -162,8 +159,11 @@ class handler(BaseHTTPRequestHandler):
             X = _preprocess(df_row)
             X = X.astype(np.float32)
             
-            input_name = XGB_MODEL.predict(X)[0]
-            log_pred = float(input_name)
+            # ONNX Inference
+            input_name = SESSION.get_inputs()[0].name
+            output = SESSION.run(None, {input_name: X})
+            log_pred = float(output[0][0])
+            
             price = float(np.expm1(log_pred))
             price = max(50_000, min(price, 1_500_000))
             

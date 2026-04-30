@@ -35,6 +35,21 @@ themeToggle.addEventListener("click", () => {
   localStorage.setItem("theme", next);
 });
 
+// ─── Health check ──────────────────────────────────
+(async function checkHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/api/predict`, { method: "GET" });
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.model_loaded) {
+        showError("⚠️ Model is initializing. Predictions may be unavailable for a moment.");
+      }
+    }
+  } catch (err) {
+    console.error("Health check failed:", err);
+  }
+})();
+
 // ─── Sync sliders ──────────────────────────────────
 document.querySelectorAll(".slider").forEach((slider) => {
   const valEl = document.getElementById(`${slider.id}-val`);
@@ -179,6 +194,9 @@ form.addEventListener("submit", async (e) => {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      if (res.status === 503) {
+        throw new Error("Model is still initializing or training. Please wait a few seconds and try again.");
+      }
       throw new Error(err.detail || `Server error ${res.status}`);
     }
 

@@ -1,34 +1,51 @@
-"""
-convert_to_onnx.py
-------------------
-Correctly convert XGBoost to ONNX using onnxmltools.
-"""
-import json
-import numpy as np
+import sys
 import os
-from xgboost import XGBRegressor
-import onnxmltools
-from skl2onnx.common.data_types import FloatTensorType
+import json
 
-# Load metadata to get feature count
-with open("models/feature_names.json") as f:
-    feature_names = json.load(f)
-n_features = len(feature_names)
-print(f"[INFO] Number of features: {n_features}")
+def log(msg):
+    print(msg)
+    sys.stdout.flush()
 
-# Load the model
-model = XGBRegressor()
-model.load_model("models/xgb_model.json")
-print("[INFO] Model loaded from JSON.")
-
-# Convert to ONNX
-initial_type = [("float_input", FloatTensorType([None, n_features]))]
-onnx_model = onnxmltools.convert_xgboost(model, initial_types=initial_type)
-
-# Save the ONNX model
-onnx_path = "models/xgb_model.onnx"
-with open(onnx_path, "wb") as f:
-    f.write(onnx_model.SerializeToString())
-
-size_kb = os.path.getsize(onnx_path) / 1024
-print(f"[OK] ONNX model saved: {onnx_path} ({size_kb:.1f} KB)")
+try:
+    log("Starting conversion script...")
+    
+    import numpy as np
+    import xgboost as xgb
+    import onnxmltools
+    from skl2onnx.common.data_types import FloatTensorType
+    import onnxruntime as ort
+    
+    log("Imports successful")
+    
+    if not os.path.exists("models/feature_names.json"):
+        log("ERROR: models/feature_names.json not found")
+        sys.exit(1)
+        
+    with open("models/feature_names.json") as f:
+        feature_names = json.load(f)
+    n_features = len(feature_names)
+    log(f"Features found: {n_features}")
+    
+    if not os.path.exists("models/xgb_model.json"):
+        log("ERROR: models/xgb_model.json not found")
+        sys.exit(1)
+        
+    model = xgb.XGBRegressor()
+    model.load_model("models/xgb_model.json")
+    log("Model loaded from JSON")
+    
+    log("Starting ONNX conversion...")
+    initial_type = [("float_input", FloatTensorType([None, n_features]))]
+    onnx_model = onnxmltools.convert_xgboost(model, initial_types=initial_type, target_opset=12)
+    log("Conversion successful")
+    
+    onnx_path = "models/xgb_model.onnx"
+    with open(onnx_path, "wb") as f:
+        f.write(onnx_model.SerializeToString())
+    log(f"ONNX model saved to {onnx_path}")
+    
+except Exception as e:
+    log(f"CRITICAL ERROR: {str(e)}")
+    import traceback
+    log(traceback.format_exc())
+    sys.exit(1)
