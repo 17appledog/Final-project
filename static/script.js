@@ -282,3 +282,13 @@ document.querySelectorAll(".feat-bar").forEach(bar => {
     hiddenSelect.value = defaultOption.dataset.value;
   }
 })();
+
+// Animate shadow colour to match the conic-gradient
+const card = document.querySelector('.rgb-side-card');
+if (card) {
+  let hue = 0;
+  setInterval(() => {
+    hue = (hue + 2) % 360;
+    card.style.boxShadow = `0 0 30px hsl(${hue}, 100%, 60%)`;
+  }, 50);
+}

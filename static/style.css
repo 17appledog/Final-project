@@ -1188,35 +1188,53 @@ label .tooltip:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* Clean rotating rainbow border – no ::before / ::after */
 .rgb-side-card {
+  position: relative;
   padding: 2rem;
   border-radius: 18px;
-  border: 5px solid transparent;                          /* transparent base */
-  background-clip: padding-box, border-box;
-  background-origin: padding-box, border-box;
-  background-image: 
-    linear-gradient(#16162a, #16162a),                    /* inner solid card */
-    conic-gradient(
-      from 0deg,
-      #ff0080, #ff8c00, #40e0d0, #7928ca, #ff0080        /* rainbow wheel */
-    );
-  animation: spinBorder 4s linear infinite;               /* rotation */
+  background: #16162a;          /* solid dark card – no transparency */
+  z-index: 1;
+  overflow: hidden;             /* keep the pseudo-element inside the border area */
+  box-shadow: 0 0 30px rgba(255, 0, 128, 0.3);  /* initial glow */
+  transition: box-shadow 0.5s;
 }
 
-/* Keep the card spin */
-@keyframes spinBorder {
-  to { transform: rotate(360deg); }
+/* The running light – placed behind the card, clipped to border */
+.rgb-side-card::before {
+  content: "";
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    #ff0080, #ff8c00, #40e0d0, #7928ca, #ff0080
+  );
+  border-radius: 20px;
+  animation: spinLight 5s linear infinite;
+  filter: blur(4px);
 }
 
-/* Light mode (no transparency) */
+/* Inner mask – fills the card, so only the thin border is visible */
+.rgb-side-card::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: #16162a;         /* same as card background */
+  border-radius: 14px;
+  z-index: -1;
+}
+
+/* Rotation for the light */
+@keyframes spinLight {
+  100% { transform: rotate(360deg); }
+}
+
+/* Light mode (solid white card) */
 [data-theme="light"] .rgb-side-card {
-  background-image: 
-    linear-gradient(#ffffff, #ffffff),
-    conic-gradient(
-      from 0deg,
-      #ff0080, #ff8c00, #40e0d0, #7928ca, #ff0080
-    );
+  background: #ffffff;
+}
+[data-theme="light"] .rgb-side-card::after {
+  background: #ffffff;
 }
 
 /* Custom dropdown container */
