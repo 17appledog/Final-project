@@ -132,35 +132,42 @@
               Neighborhood
               <span class="field-tooltip" data-tip="Ames neighborhood (e.g., NAmes, CollgCr, Somerst)">?</span>
             </label>
-            <div class="select-wrap">
-              <select id="Neighborhood" name="Neighborhood" class="select-input">
-                <option value="Blmngtn">Blmngtn</option>
-                <option value="Blueste">Blueste</option>
-                <option value="BrDale">BrDale</option>
-                <option value="BrkSide">BrkSide</option>
-                <option value="ClearCr">ClearCr</option>
-                <option value="CollgCr">CollgCr</option>
-                <option value="Crawfor">Crawfor</option>
-                <option value="Edwards">Edwards</option>
-                <option value="Gilbert">Gilbert</option>
-                <option value="IDOTRR">IDOTRR</option>
-                <option value="MeadowV">MeadowV</option>
-                <option value="Mitchel">Mitchel</option>
-                <option value="NAmes">NAmes</option>
-                <option value="NoRidge">NoRidge</option>
-                <option value="NPkVill">NPkVill</option>
-                <option value="NridgHt">NridgHt</option>
-                <option value="NWAmes">NWAmes</option>
-                <option value="OldTown">OldTown</option>
-                <option value="Sawyer">Sawyer</option>
-                <option value="SawyerW">SawyerW</option>
-                <option value="Somerst">Somerst</option>
-                <option value="StoneBr">StoneBr</option>
-                <option value="SWISU">SWISU</option>
-                <option value="Timber">Timber</option>
-                <option value="Veenker">Veenker</option>
+            <div class="custom-dropdown" id="neighborhood-dropdown">
+              <button type="button" class="custom-dropdown__trigger" id="neighborhood-trigger">
+                <span id="neighborhood-display">Select Neighborhood</span>
+                <svg class="custom-dropdown__arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+              </button>
+              <ul class="custom-dropdown__list" id="neighborhood-list" role="listbox">
+                <li data-value="Blmngtn">Blmngtn</li>
+                <li data-value="Blueste">Blueste</li>
+                <li data-value="BrDale">BrDale</li>
+                <li data-value="BrkSide">BrkSide</li>
+                <li data-value="ClearCr">ClearCr</li>
+                <li data-value="CollgCr">CollgCr</li>
+                <li data-value="Crawfor">Crawfor</li>
+                <li data-value="Edwards">Edwards</li>
+                <li data-value="Gilbert">Gilbert</li>
+                <li data-value="IDOTRR">IDOTRR</li>
+                <li data-value="MeadowV">MeadowV</li>
+                <li data-value="Mitchel">Mitchel</li>
+                <li data-value="NAmes" class="active">NAmes</li>
+                <li data-value="NoRidge">NoRidge</li>
+                <li data-value="NPkVill">NPkVill</li>
+                <li data-value="NridgHt">NridgHt</li>
+                <li data-value="NWAmes">NWAmes</li>
+                <li data-value="OldTown">OldTown</li>
+                <li data-value="Sawyer">Sawyer</li>
+                <li data-value="SawyerW">SawyerW</li>
+                <li data-value="Somerst">Somerst</li>
+                <li data-value="StoneBr">StoneBr</li>
+                <li data-value="SWISU">SWISU</li>
+                <li data-value="Timber">Timber</li>
+                <li data-value="Veenker">Veenker</li>
+              </ul>
+              <!-- The original hidden select – the value will be synced here -->
+              <select id="Neighborhood" name="Neighborhood" hidden>
+                <option value="NAmes" selected>NAmes</option>
               </select>
-              <span class="select-arrow">▾</span>
             </div>
           </div>
 

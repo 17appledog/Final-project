@@ -657,6 +657,105 @@ label .tooltip:hover {
   color: #6b7280;
 }
 
+/* Custom dropdown container */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+  font-family: inherit;
+  user-select: none;
+}
+
+/* Trigger button */
+.custom-dropdown__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.custom-dropdown__trigger:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 0 10px rgba(167, 139, 250, 0.3);
+}
+
+/* Arrow icon */
+.custom-dropdown__arrow {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  transition: transform 0.3s;
+}
+
+.custom-dropdown.active .custom-dropdown__arrow {
+  transform: rotate(180deg);
+}
+
+/* Dropdown list */
+.custom-dropdown__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #1e1e2f;  /* dark background */
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.25s, transform 0.25s, visibility 0.25s;
+  z-index: 100;
+}
+
+.custom-dropdown.active .custom-dropdown__list {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Each option */
+.custom-dropdown__list li {
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #e5e7eb;  /* light text for dark mode */
+}
+
+.custom-dropdown__list li:hover {
+  background: rgba(167, 139, 250, 0.2);
+}
+
+.custom-dropdown__list li.active {
+  background: rgba(167, 139, 250, 0.4);
+  color: #fff;
+}
+
+/* Light mode overrides */
+[data-theme="light"] .custom-dropdown__trigger {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+[data-theme="light"] .custom-dropdown__list {
+  background: #ffffff;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+[data-theme="light"] .custom-dropdown__list li {
+  color: #1f2937;
+}
+
 /* ══════════════════════════════════════════════
    ANIMATIONS
 ══════════════════════════════════════════════ */

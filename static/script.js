@@ -240,3 +240,48 @@ document.querySelectorAll(".feat-bar").forEach(bar => {
   bar.style.animationPlayState = "paused";
   observer.observe(bar);
 });
+
+// ─── Custom Neighborhood Dropdown ──────────────────
+(function initCustomDropdown() {
+  const dropdown      = document.getElementById('neighborhood-dropdown');
+  const trigger       = document.getElementById('neighborhood-trigger');
+  const display       = document.getElementById('neighborhood-display');
+  const list          = document.getElementById('neighborhood-list');
+  const hiddenSelect  = document.getElementById('Neighborhood');
+
+  if (!dropdown || !trigger || !display || !list || !hiddenSelect) return;
+
+  // Toggle dropdown
+  trigger.addEventListener('click', () => {
+    dropdown.classList.toggle('active');
+  });
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!dropdown.contains(e.target)) {
+      dropdown.classList.remove('active');
+    }
+  });
+
+  // Handle selection
+  list.querySelectorAll('li').forEach(item => {
+    item.addEventListener('click', () => {
+      // Update display text
+      display.textContent = item.textContent;
+      // Update active class
+      list.querySelectorAll('li').forEach(li => li.classList.remove('active'));
+      item.classList.add('active');
+      // Sync hidden select
+      hiddenSelect.value = item.dataset.value;
+      // Close dropdown
+      dropdown.classList.remove('active');
+    });
+  });
+
+  // Initial sync
+  const defaultOption = list.querySelector('li.active') || list.querySelector('li[data-value="NAmes"]');
+  if (defaultOption) {
+    display.textContent = defaultOption.textContent;
+    hiddenSelect.value = defaultOption.dataset.value;
+  }
+})();
