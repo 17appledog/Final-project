@@ -682,37 +682,39 @@ label .tooltip:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* ---------- Card with moving neon border (no transparency) ---------- */
+/* —— Card with animated neon border only —— */
 .rgb-side-card {
   position: relative;
   padding: 2rem;
   border-radius: 18px;
-  background: #16162a;          /* solid dark – no transparency */
+  background: #16162a;                /* solid dark – no transparency */
   z-index: 1;
-  /* no backdrop-filter → no see-through */
 }
 
-/* The moving light – placed behind the card but clipped to border */
+/* Rotating rainbow light (only visible outside the card) */
 .rgb-side-card::before {
   content: "";
   position: absolute;
-  top: -3px; left: -3px; right: -3px; bottom: -3px;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
   z-index: -1;
   background: conic-gradient(
     from 0deg at 50% 50%,
-    #ff0080, #ff8c00, #40e0d0, #7928ca, #00f2fe, #ff0080
+    #ff0080, #ff8c00, #40e0d0, #7928ca, #ff0080
   );
   border-radius: 20px;
   animation: spinLight 5s linear infinite;
-  filter: blur(6px);          /* slight blur for the neon glow */
+  filter: blur(4px);                /* soft neon glow */
 }
 
-/* Inner card – fills the area, leaving only the border visible */
+/* Inner card – covers everything inside, leaving only a thin border visible */
 .rgb-side-card::after {
   content: "";
   position: absolute;
-  inset: 2px;
-  background: #16162a;         /* EXACTLY the same colour as the card */
+  inset: 3px;
+  background: #16162a;               /* EXACT solid colour of the card */
   border-radius: 16px;
   z-index: -1;
 }
@@ -723,7 +725,7 @@ label .tooltip:hover {
 
 /* Light mode overrides */
 [data-theme="light"] .rgb-side-card {
-  background: #ffffff;        /* solid white */
+  background: #ffffff;
 }
 [data-theme="light"] .rgb-side-card::after {
   background: #ffffff;
