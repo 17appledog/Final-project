@@ -1,6 +1,6 @@
 import sys, os, json
 import numpy as np
-import xgboost as xgb
+import onnxruntime as ort
 
 # ──────────────────────────────────────────────
 # Load all artefacts at import (cold start) ──
@@ -26,11 +26,10 @@ with open(os.path.join(MODEL_DIR, "meta.json")) as f:
 DEFAULT_VALUES = meta["default_values"]
 SKEW_COLS = meta.get("skew_cols", [])
 
-# Load XGBoost model from JSON (very fast)
-MODEL_PATH = os.path.join(MODEL_DIR, "xgb_model.json")
-model = xgb.XGBRegressor()
-model.load_model(MODEL_PATH)
-print("✅ XGBoost model loaded", file=sys.stderr)
+# Load ONNX model
+MODEL_PATH = os.path.join(MODEL_DIR, "xgb_model.onnx")
+session = ort.InferenceSession(MODEL_PATH)
+print("✅ ONNX model loaded", file=sys.stderr)
 
 # ──────────────────────────────────────────────
 # Preprocessing (mirrors train_and_save.py) ──
@@ -140,7 +139,9 @@ async def health():
 async def predict(request: PredictRequest):
     try:
         X = preprocess(request.dict())
-        pred_log = model.predict(X)[0]
+        # ONNX inference
+        inputs = {session.get_inputs()[0].name: X}
+        pred_log = session.run(None, inputs)[0][0][0]
         price = np.expm1(pred_log)
         return {"predicted_price": round(price, 2)}
     except Exception as e:
