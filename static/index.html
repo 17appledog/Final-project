@@ -88,254 +88,256 @@
 
   <!-- ── Main prediction form ── -->
   <main id="predict-form" class="form-section">
-    <div class="form-card" role="main">
-      <div class="form-card-header">
-        <h2 class="form-title">Property Details</h2>
-        <p class="form-subtitle">Fill in the fields below — defaults are pre-set to Ames medians.</p>
-      </div>
-
-      <form id="house-form" novalidate>
-        <div class="form-grid">
-
-          <!-- OverallQual -->
-          <div class="field-group">
-            <label for="OverallQual" class="field-label">
-              Overall Quality
-              <span class="field-tooltip" data-tip="Material & finish quality: 1 (Very Poor) – 10 (Very Excellent)">?</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="OverallQual" name="OverallQual"
-                     min="1" max="10" value="6" step="1"
-                     class="slider" aria-valuemin="1" aria-valuemax="10" />
-              <span class="slider-val" id="OverallQual-val">6</span>
-            </div>
-            <div class="slider-labels"><span>Poor</span><span>Excellent</span></div>
-          </div>
-
-          <!-- GrLivArea -->
-          <div class="field-group">
-            <label for="GrLivArea" class="field-label">
-              Living Area (sq ft)
-              <span class="field-tooltip" data-tip="Above ground living area in square feet">?</span>
-            </label>
-            <div class="input-wrap">
-              <input type="number" id="GrLivArea" name="GrLivArea"
-                     value="1500" min="300" max="6000" step="10"
-                     class="text-input" placeholder="e.g. 1500" />
-              <span class="input-unit">sq ft</span>
-            </div>
-          </div>
-
-          <!-- Neighborhood -->
-          <div class="field-group">
-            <label for="Neighborhood" class="field-label">
-              Neighborhood
-              <span class="field-tooltip" data-tip="Ames neighborhood (e.g., NAmes, CollgCr, Somerst)">?</span>
-            </label>
-            <div class="custom-dropdown" id="neighborhood-dropdown">
-              <button type="button" class="custom-dropdown__trigger" id="neighborhood-trigger">
-                <span id="neighborhood-display">Select Neighborhood</span>
-                <svg class="custom-dropdown__arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-              </button>
-              <ul class="custom-dropdown__list" id="neighborhood-list" role="listbox">
-                <li data-value="Blmngtn">Blmngtn</li>
-                <li data-value="Blueste">Blueste</li>
-                <li data-value="BrDale">BrDale</li>
-                <li data-value="BrkSide">BrkSide</li>
-                <li data-value="ClearCr">ClearCr</li>
-                <li data-value="CollgCr">CollgCr</li>
-                <li data-value="Crawfor">Crawfor</li>
-                <li data-value="Edwards">Edwards</li>
-                <li data-value="Gilbert">Gilbert</li>
-                <li data-value="IDOTRR">IDOTRR</li>
-                <li data-value="MeadowV">MeadowV</li>
-                <li data-value="Mitchel">Mitchel</li>
-                <li data-value="NAmes" class="active">NAmes</li>
-                <li data-value="NoRidge">NoRidge</li>
-                <li data-value="NPkVill">NPkVill</li>
-                <li data-value="NridgHt">NridgHt</li>
-                <li data-value="NWAmes">NWAmes</li>
-                <li data-value="OldTown">OldTown</li>
-                <li data-value="Sawyer">Sawyer</li>
-                <li data-value="SawyerW">SawyerW</li>
-                <li data-value="Somerst">Somerst</li>
-                <li data-value="StoneBr">StoneBr</li>
-                <li data-value="SWISU">SWISU</li>
-                <li data-value="Timber">Timber</li>
-                <li data-value="Veenker">Veenker</li>
-              </ul>
-              <!-- The original hidden select – the value will be synced here -->
-              <select id="Neighborhood" name="Neighborhood" hidden>
-                <option value="NAmes" selected>NAmes</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- YearBuilt -->
-          <div class="field-group">
-            <label for="YearBuilt" class="field-label">
-              Year Built
-              <span class="field-tooltip" data-tip="Original year of construction">?</span>
-            </label>
-            <div class="input-wrap">
-              <input type="number" id="YearBuilt" name="YearBuilt"
-                     value="1990" min="1872" max="2010" step="1"
-                     class="text-input" placeholder="e.g. 1990" />
-            </div>
-          </div>
-
-          <!-- TotalSF -->
-          <div class="field-group">
-            <label for="TotalSF" class="field-label">
-              Total Square Footage
-              <span class="field-tooltip" data-tip="Basement + 1st floor + 2nd floor combined">?</span>
-            </label>
-            <div class="input-wrap">
-              <input type="number" id="TotalSF" name="TotalSF"
-                     value="2000" min="300" max="12000" step="10"
-                     class="text-input" placeholder="e.g. 2000" />
-              <span class="input-unit">sq ft</span>
-            </div>
-          </div>
-
-          <!-- HouseAge -->
-          <div class="field-group">
-            <label for="HouseAge" class="field-label">
-              House Age (years)
-              <span class="field-tooltip" data-tip="Years since original construction (2010 – YearBuilt)">?</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="HouseAge" name="HouseAge"
-                     min="0" max="150" value="20" step="1"
-                     class="slider" />
-              <span class="slider-val" id="HouseAge-val">20</span>
-            </div>
-            <div class="slider-labels"><span>New</span><span>150+ yrs</span></div>
-          </div>
-
-          <!-- GarageCars -->
-          <div class="field-group">
-            <label for="GarageCars" class="field-label">
-              Garage Capacity (cars)
-              <span class="field-tooltip" data-tip="Number of cars the garage can hold (0–4)">?</span>
-            </label>
-            <div class="pill-selector" id="GarageCars-group" role="radiogroup" aria-label="Garage Capacity">
-              <button type="button" class="pill" data-val="0" data-name="GarageCars">0</button>
-              <button type="button" class="pill" data-val="1" data-name="GarageCars">1</button>
-              <button type="button" class="pill active" data-val="2" data-name="GarageCars">2</button>
-              <button type="button" class="pill" data-val="3" data-name="GarageCars">3</button>
-              <button type="button" class="pill" data-val="4" data-name="GarageCars">4</button>
-            </div>
-            <input type="hidden" id="GarageCars" name="GarageCars" value="2" />
-          </div>
-
-          <!-- KitchenAbvGr -->
-          <div class="field-group">
-            <label for="KitchenAbvGr" class="field-label">
-              Kitchens Above Grade
-              <span class="field-tooltip" data-tip="Number of kitchens on above-ground floors">?</span>
-            </label>
-            <div class="pill-selector" id="KitchenAbvGr-group" role="radiogroup" aria-label="Kitchens Above Grade">
-              <button type="button" class="pill" data-val="0" data-name="KitchenAbvGr">0</button>
-              <button type="button" class="pill active" data-val="1" data-name="KitchenAbvGr">1</button>
-              <button type="button" class="pill" data-val="2" data-name="KitchenAbvGr">2</button>
-              <button type="button" class="pill" data-val="3" data-name="KitchenAbvGr">3</button>
-            </div>
-            <input type="hidden" id="KitchenAbvGr" name="KitchenAbvGr" value="1" />
-          </div>
-
-          <!-- Fireplaces -->
-          <div class="field-group">
-            <label for="Fireplaces" class="field-label">
-              Fireplaces
-              <span class="field-tooltip" data-tip="Number of fireplaces in the house">?</span>
-            </label>
-            <div class="pill-selector" id="Fireplaces-group" role="radiogroup" aria-label="Fireplaces">
-              <button type="button" class="pill active" data-val="0" data-name="Fireplaces">0</button>
-              <button type="button" class="pill" data-val="1" data-name="Fireplaces">1</button>
-              <button type="button" class="pill" data-val="2" data-name="Fireplaces">2</button>
-              <button type="button" class="pill" data-val="3" data-name="Fireplaces">3</button>
-            </div>
-            <input type="hidden" id="Fireplaces" name="Fireplaces" value="0" />
-          </div>
-
-          <!-- FullBath -->
-          <div class="field-group">
-            <label for="FullBath" class="field-label">
-              Full Bathrooms
-              <span class="field-tooltip" data-tip="Full bathrooms above grade (with shower/tub)">?</span>
-            </label>
-            <div class="pill-selector" id="FullBath-group" role="radiogroup" aria-label="Full Bathrooms">
-              <button type="button" class="pill" data-val="0" data-name="FullBath">0</button>
-              <button type="button" class="pill" data-val="1" data-name="FullBath">1</button>
-              <button type="button" class="pill active" data-val="2" data-name="FullBath">2</button>
-              <button type="button" class="pill" data-val="3" data-name="FullBath">3</button>
-              <button type="button" class="pill" data-val="4" data-name="FullBath">4</button>
-            </div>
-            <input type="hidden" id="FullBath" name="FullBath" value="2" />
-          </div>
-
-          <!-- LotArea -->
-          <div class="field-group">
-            <label for="LotArea" class="field-label">
-              Lot Area (sq ft)
-              <span class="field-tooltip" data-tip="Total lot size in square feet">?</span>
-            </label>
-            <div class="input-wrap">
-              <input type="number" id="LotArea" name="LotArea"
-                     value="9000" min="1300" max="215000" step="100"
-                     class="text-input" placeholder="e.g. 9000" />
-              <span class="input-unit">sq ft</span>
-            </div>
-          </div>
-
-          <!-- TotRmsAbvGrd -->
-          <div class="field-group">
-            <label for="TotRmsAbvGrd" class="field-label">
-              Total Rooms Above Grade
-              <span class="field-tooltip" data-tip="Total rooms above grade — bathrooms not included">?</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="TotRmsAbvGrd" name="TotRmsAbvGrd"
-                     min="2" max="14" value="7" step="1"
-                     class="slider" />
-              <span class="slider-val" id="TotRmsAbvGrd-val">7</span>
-            </div>
-            <div class="slider-labels"><span>2</span><span>14</span></div>
-          </div>
-
-        </div><!-- /.form-grid -->
-
-        <!-- Error message -->
-        <div id="form-error" class="form-error" role="alert" aria-live="polite"></div>
-
-        <!-- Submit -->
-        <button type="submit" id="predict-btn" class="predict-btn">
-          <span class="btn-text">Predict Price</span>
-          <span class="btn-icon">✨</span>
-          <div class="btn-glow"></div>
-        </button>
-      </form>
-
-      <!-- ── Result panel ── -->
-      <div id="result-panel" class="result-panel" aria-live="polite" hidden>
-        <div class="result-inner">
-          <div class="result-label">Estimated Market Value</div>
-          <div class="result-price" id="result-price">$0</div>
-          <div class="result-sub">Based on XGBoost model · Ames, Iowa market</div>
-          <div class="result-chips">
-            <span class="chip chip-green">91% R²</span>
-            <span class="chip chip-blue">±$23k avg error</span>
-            <span class="chip chip-purple">log-scale RMSE 0.115</span>
-          </div>
-          <button type="button" id="reset-btn" class="reset-btn">← New Prediction</button>
+    <div class="animated-card">
+      <div class="form-card" role="main">
+        <div class="form-card-header">
+          <h2 class="form-title">Property Details</h2>
+          <p class="form-subtitle">Fill in the fields below — defaults are pre-set to Ames medians.</p>
         </div>
-      </div>
 
-      <!-- Loading overlay -->
-      <div id="loading-overlay" class="loading-overlay" hidden aria-label="Predicting…">
-        <div class="spinner-ring"></div>
-        <p class="loading-text">Crunching numbers…</p>
+        <form id="house-form" novalidate>
+          <div class="form-grid">
+
+            <!-- OverallQual -->
+            <div class="field-group">
+              <label for="OverallQual" class="field-label">
+                Overall Quality
+                <span class="field-tooltip" data-tip="Material & finish quality: 1 (Very Poor) – 10 (Very Excellent)">?</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="OverallQual" name="OverallQual"
+                       min="1" max="10" value="6" step="1"
+                       class="slider" aria-valuemin="1" aria-valuemax="10" />
+                <span class="slider-val" id="OverallQual-val">6</span>
+              </div>
+              <div class="slider-labels"><span>Poor</span><span>Excellent</span></div>
+            </div>
+
+            <!-- GrLivArea -->
+            <div class="field-group">
+              <label for="GrLivArea" class="field-label">
+                Living Area (sq ft)
+                <span class="field-tooltip" data-tip="Above ground living area in square feet">?</span>
+              </label>
+              <div class="input-wrap">
+                <input type="number" id="GrLivArea" name="GrLivArea"
+                       value="1500" min="300" max="6000" step="10"
+                       class="text-input" placeholder="e.g. 1500" />
+                <span class="input-unit">sq ft</span>
+              </div>
+            </div>
+
+            <!-- Neighborhood -->
+            <div class="field-group">
+              <label for="Neighborhood" class="field-label">
+                Neighborhood
+                <span class="field-tooltip" data-tip="Ames neighborhood (e.g., NAmes, CollgCr, Somerst)">?</span>
+              </label>
+              <div class="custom-dropdown" id="neighborhood-dropdown">
+                <button type="button" class="custom-dropdown__trigger" id="neighborhood-trigger">
+                  <span id="neighborhood-display">Select Neighborhood</span>
+                  <svg class="custom-dropdown__arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                </button>
+                <ul class="custom-dropdown__list" id="neighborhood-list" role="listbox">
+                  <li data-value="Blmngtn">Blmngtn</li>
+                  <li data-value="Blueste">Blueste</li>
+                  <li data-value="BrDale">BrDale</li>
+                  <li data-value="BrkSide">BrkSide</li>
+                  <li data-value="ClearCr">ClearCr</li>
+                  <li data-value="CollgCr">CollgCr</li>
+                  <li data-value="Crawfor">Crawfor</li>
+                  <li data-value="Edwards">Edwards</li>
+                  <li data-value="Gilbert">Gilbert</li>
+                  <li data-value="IDOTRR">IDOTRR</li>
+                  <li data-value="MeadowV">MeadowV</li>
+                  <li data-value="Mitchel">Mitchel</li>
+                  <li data-value="NAmes" class="active">NAmes</li>
+                  <li data-value="NoRidge">NoRidge</li>
+                  <li data-value="NPkVill">NPkVill</li>
+                  <li data-value="NridgHt">NridgHt</li>
+                  <li data-value="NWAmes">NWAmes</li>
+                  <li data-value="OldTown">OldTown</li>
+                  <li data-value="Sawyer">Sawyer</li>
+                  <li data-value="SawyerW">SawyerW</li>
+                  <li data-value="Somerst">Somerst</li>
+                  <li data-value="StoneBr">StoneBr</li>
+                  <li data-value="SWISU">SWISU</li>
+                  <li data-value="Timber">Timber</li>
+                  <li data-value="Veenker">Veenker</li>
+                </ul>
+                <!-- The original hidden select – the value will be synced here -->
+                <select id="Neighborhood" name="Neighborhood" hidden>
+                  <option value="NAmes" selected>NAmes</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- YearBuilt -->
+            <div class="field-group">
+              <label for="YearBuilt" class="field-label">
+                Year Built
+                <span class="field-tooltip" data-tip="Original year of construction">?</span>
+              </label>
+              <div class="input-wrap">
+                <input type="number" id="YearBuilt" name="YearBuilt"
+                       value="1990" min="1872" max="2010" step="1"
+                       class="text-input" placeholder="e.g. 1990" />
+              </div>
+            </div>
+
+            <!-- TotalSF -->
+            <div class="field-group">
+              <label for="TotalSF" class="field-label">
+                Total Square Footage
+                <span class="field-tooltip" data-tip="Basement + 1st floor + 2nd floor combined">?</span>
+              </label>
+              <div class="input-wrap">
+                <input type="number" id="TotalSF" name="TotalSF"
+                       value="2000" min="300" max="12000" step="10"
+                       class="text-input" placeholder="e.g. 2000" />
+                <span class="input-unit">sq ft</span>
+              </div>
+            </div>
+
+            <!-- HouseAge -->
+            <div class="field-group">
+              <label for="HouseAge" class="field-label">
+                House Age (years)
+                <span class="field-tooltip" data-tip="Years since original construction (2010 – YearBuilt)">?</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="HouseAge" name="HouseAge"
+                       min="0" max="150" value="20" step="1"
+                       class="slider" />
+                <span class="slider-val" id="HouseAge-val">20</span>
+              </div>
+              <div class="slider-labels"><span>New</span><span>150+ yrs</span></div>
+            </div>
+
+            <!-- GarageCars -->
+            <div class="field-group">
+              <label for="GarageCars" class="field-label">
+                Garage Capacity (cars)
+                <span class="field-tooltip" data-tip="Number of cars the garage can hold (0–4)">?</span>
+              </label>
+              <div class="pill-selector" id="GarageCars-group" role="radiogroup" aria-label="Garage Capacity">
+                <button type="button" class="pill" data-val="0" data-name="GarageCars">0</button>
+                <button type="button" class="pill" data-val="1" data-name="GarageCars">1</button>
+                <button type="button" class="pill active" data-val="2" data-name="GarageCars">2</button>
+                <button type="button" class="pill" data-val="3" data-name="GarageCars">3</button>
+                <button type="button" class="pill" data-val="4" data-name="GarageCars">4</button>
+              </div>
+              <input type="hidden" id="GarageCars" name="GarageCars" value="2" />
+            </div>
+
+            <!-- KitchenAbvGr -->
+            <div class="field-group">
+              <label for="KitchenAbvGr" class="field-label">
+                Kitchens Above Grade
+                <span class="field-tooltip" data-tip="Number of kitchens on above-ground floors">?</span>
+              </label>
+              <div class="pill-selector" id="KitchenAbvGr-group" role="radiogroup" aria-label="Kitchens Above Grade">
+                <button type="button" class="pill" data-val="0" data-name="KitchenAbvGr">0</button>
+                <button type="button" class="pill active" data-val="1" data-name="KitchenAbvGr">1</button>
+                <button type="button" class="pill" data-val="2" data-name="KitchenAbvGr">2</button>
+                <button type="button" class="pill" data-val="3" data-name="KitchenAbvGr">3</button>
+              </div>
+              <input type="hidden" id="KitchenAbvGr" name="KitchenAbvGr" value="1" />
+            </div>
+
+            <!-- Fireplaces -->
+            <div class="field-group">
+              <label for="Fireplaces" class="field-label">
+                Fireplaces
+                <span class="field-tooltip" data-tip="Number of fireplaces in the house">?</span>
+              </label>
+              <div class="pill-selector" id="Fireplaces-group" role="radiogroup" aria-label="Fireplaces">
+                <button type="button" class="pill active" data-val="0" data-name="Fireplaces">0</button>
+                <button type="button" class="pill" data-val="1" data-name="Fireplaces">1</button>
+                <button type="button" class="pill" data-val="2" data-name="Fireplaces">2</button>
+                <button type="button" class="pill" data-val="3" data-name="Fireplaces">3</button>
+              </div>
+              <input type="hidden" id="Fireplaces" name="Fireplaces" value="0" />
+            </div>
+
+            <!-- FullBath -->
+            <div class="field-group">
+              <label for="FullBath" class="field-label">
+                Full Bathrooms
+                <span class="field-tooltip" data-tip="Full bathrooms above grade (with shower/tub)">?</span>
+              </label>
+              <div class="pill-selector" id="FullBath-group" role="radiogroup" aria-label="Full Bathrooms">
+                <button type="button" class="pill" data-val="0" data-name="FullBath">0</button>
+                <button type="button" class="pill" data-val="1" data-name="FullBath">1</button>
+                <button type="button" class="pill active" data-val="2" data-name="FullBath">2</button>
+                <button type="button" class="pill" data-val="3" data-name="FullBath">3</button>
+                <button type="button" class="pill" data-val="4" data-name="FullBath">4</button>
+              </div>
+              <input type="hidden" id="FullBath" name="FullBath" value="2" />
+            </div>
+
+            <!-- LotArea -->
+            <div class="field-group">
+              <label for="LotArea" class="field-label">
+                Lot Area (sq ft)
+                <span class="field-tooltip" data-tip="Total lot size in square feet">?</span>
+              </label>
+              <div class="input-wrap">
+                <input type="number" id="LotArea" name="LotArea"
+                       value="9000" min="1300" max="215000" step="100"
+                       class="text-input" placeholder="e.g. 9000" />
+                <span class="input-unit">sq ft</span>
+              </div>
+            </div>
+
+            <!-- TotRmsAbvGrd -->
+            <div class="field-group">
+              <label for="TotRmsAbvGrd" class="field-label">
+                Total Rooms Above Grade
+                <span class="field-tooltip" data-tip="Total rooms above grade — bathrooms not included">?</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="TotRmsAbvGrd" name="TotRmsAbvGrd"
+                       min="2" max="14" value="7" step="1"
+                       class="slider" />
+                <span class="slider-val" id="TotRmsAbvGrd-val">7</span>
+              </div>
+              <div class="slider-labels"><span>2</span><span>14</span></div>
+            </div>
+
+          </div><!-- /.form-grid -->
+
+          <!-- Error message -->
+          <div id="form-error" class="form-error" role="alert" aria-live="polite"></div>
+
+          <!-- Submit -->
+          <button type="submit" id="predict-btn" class="predict-btn">
+            <span class="btn-text">Predict Price</span>
+            <span class="btn-icon">✨</span>
+            <div class="btn-glow"></div>
+          </button>
+        </form>
+
+        <!-- ── Result panel ── -->
+        <div id="result-panel" class="result-panel" aria-live="polite" hidden>
+          <div class="result-inner">
+            <div class="result-label">Estimated Market Value</div>
+            <div class="result-price" id="result-price">$0</div>
+            <div class="result-sub">Based on XGBoost model · Ames, Iowa market</div>
+            <div class="result-chips">
+              <span class="chip chip-green">91% R²</span>
+              <span class="chip chip-blue">±$23k avg error</span>
+              <span class="chip chip-purple">log-scale RMSE 0.115</span>
+            </div>
+            <button type="button" id="reset-btn" class="reset-btn">← New Prediction</button>
+          </div>
+        </div>
+
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="loading-overlay" hidden aria-label="Predicting…">
+          <div class="spinner-ring"></div>
+          <p class="loading-text">Crunching numbers…</p>
+        </div>
       </div>
     </div>
   </main>

@@ -682,6 +682,56 @@ label .tooltip:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
+/* ---------- Running RGB border card ---------- */
+.animated-card {
+  position: relative;
+  padding: 3px;                 /* Thin space for the border to show */
+  border-radius: 24px;
+  background: rgba(17, 17, 30, 0.85);   /* dark glass effect */
+  backdrop-filter: blur(10px);
+  overflow: hidden;                     /* keep the pseudo-element inside */
+  z-index: 1;
+}
+
+/* The moving gradient border */
+.animated-card::before {
+  content: "";
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    #ff0080, #ff8c00, #40e0d0, #7928ca, #ff0080
+  );
+  animation: rotateRGB 4s linear infinite;
+  filter: blur(8px);
+  opacity: 0.8;
+}
+
+/* Inner background to hide the blur inside the card */
+.animated-card::after {
+  content: "";
+  position: absolute;
+  inset: 3px;                  /* leave a thin border visible */
+  background: var(--surface);
+  border-radius: 21px;
+  z-index: -1;
+}
+
+/* Rotation keyframe */
+@keyframes rotateRGB {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Light mode adjustments */
+[data-theme="light"] .animated-card {
+  background: rgba(255, 255, 255, 0.85);
+}
+[data-theme="light"] .animated-card::after {
+  background: var(--surface);
+}
+
 /* Custom dropdown container */
 .custom-dropdown {
   position: relative;
