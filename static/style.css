@@ -294,21 +294,38 @@ form { padding: 32px 40px 40px; }
 
 .field-tooltip {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 16px; height: 16px; border-radius: 50%;
+  width: 18px; height: 18px; border-radius: 50%;
   background: var(--surface2); border: 1px solid var(--border);
-  font-size: 0.65rem; color: var(--text-muted); cursor: help;
-  position: relative;
+  font-size: 0.7rem; color: var(--text-muted); cursor: help;
+  position: relative; font-weight: 700;
+  transition: all var(--transition);
+  opacity: 0.8;
 }
+
+.field-tooltip:hover {
+  background: var(--accent);
+  color: #fff;
+  opacity: 1;
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
 .field-tooltip:hover::after {
   content: attr(data-tip);
-  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  position: absolute; bottom: calc(100% + 10px); left: 50%;
   transform: translateX(-50%);
   background: #1e2740; border: 1px solid var(--border2);
-  color: var(--text); font-size: 0.78rem; font-weight: 400;
-  padding: 8px 12px; border-radius: 8px;
-  white-space: nowrap; max-width: 220px; white-space: normal;
+  color: #fff; font-size: 0.8rem; font-weight: 400;
+  padding: 10px 14px; border-radius: 10px;
+  width: 200px; white-space: normal;
   z-index: 50; pointer-events: none; text-transform: none; letter-spacing: 0;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  line-height: 1.4;
+}
+
+[data-theme="light"] .field-tooltip:hover::after {
+  background: #fff; color: #1a1f36;
+  box-shadow: 0 10px 30px rgba(108,99,255,0.2);
 }
 
 /* ── Text / Number inputs ── */
