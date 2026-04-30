@@ -103,7 +103,7 @@ high_skew = [c for c in high_skew if c not in binary_cols]
 
 SKEW_COLS = high_skew
 print(f"Applying log1p to {len(SKEW_COLS)} skewed features (excluding binary)...")
-for col in high_skew:
+for col in SKEW_COLS:
     df[col] = np.log1p(df[col].clip(lower=0))
 
 # ──────────────────────────────────────────────

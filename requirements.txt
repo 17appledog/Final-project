@@ -1,7 +1,7 @@
 numpy==1.26.4
-onnxruntime==1.17.1
 scikit-learn==1.4.1.post1
+xgboost==2.0.3
 fastapi
 uvicorn
 pydantic
-# xgboost is only needed for training/conversion, not for Vercel if we use ONNX
+python-multipart

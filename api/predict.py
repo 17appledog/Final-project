@@ -1,41 +1,43 @@
-import sys
-import os
-import json
+import sys, os, json
 import numpy as np
-import onnxruntime as ort
+import xgboost as xgb
 
+# ──────────────────────────────────────────────
+# Load all artefacts at import (cold start) ──
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
 
-# 1. Load all lightweight configs at import time
+# Load feature names
 with open(os.path.join(MODEL_DIR, "feature_names.json")) as f:
     FEATURE_NAMES = json.load(f)
 
+# Load scaler
 with open(os.path.join(MODEL_DIR, "scaler.json")) as f:
     sc = json.load(f)
-    SCALER_CENTER = np.array(sc["center"], dtype=np.float32)
-    SCALER_SCALE  = np.array(sc["scale"], dtype=np.float32)
+SCALER_CENTER = np.array(sc["center"], dtype=np.float32)
+SCALER_SCALE  = np.array(sc["scale"], dtype=np.float32)
 
+# Load label encoders
 with open(os.path.join(MODEL_DIR, "label_encoders.json")) as f:
     LABEL_ENCODERS = json.load(f)
 
+# Load meta (default values, skew cols)
 with open(os.path.join(MODEL_DIR, "meta.json")) as f:
     meta = json.load(f)
-    DEFAULT_VALUES = meta["default_values"]
-    SKEW_COLS = meta.get("skew_cols", [])
+DEFAULT_VALUES = meta["default_values"]
+SKEW_COLS = meta.get("skew_cols", [])
 
-# 2. Load the ONNX model (only once)
-ONNX_PATH = os.path.join(MODEL_DIR, "xgb_model.onnx")
-session = ort.InferenceSession(ONNX_PATH)
-INPUT_NAME = session.get_inputs()[0].name
-print("✅ Model ready", file=sys.stderr)
+# Load XGBoost model from JSON (very fast)
+MODEL_PATH = os.path.join(MODEL_DIR, "xgb_model.json")
+model = xgb.XGBRegressor()
+model.load_model(MODEL_PATH)
+print("✅ XGBoost model loaded", file=sys.stderr)
 
-# -------------------------------------------------------------------
-# Preprocessing (mirrors train_and_save.py)
-# -------------------------------------------------------------------
+# ──────────────────────────────────────────────
+# Preprocessing (mirrors train_and_save.py) ──
 def preprocess(input_json: dict) -> np.ndarray:
     features = DEFAULT_VALUES.copy()
 
-    # 1. override with user input
+    # Override with user input
     user = {
         "OverallQual": int(input_json["OverallQual"]),
         "GrLivArea": float(input_json["GrLivArea"]),
@@ -53,7 +55,7 @@ def preprocess(input_json: dict) -> np.ndarray:
     for k, v in user.items():
         features[k] = v
 
-    # 2. engineered features
+    # Engineered features
     features["TotalBath"] = (features["FullBath"] + 0.5 * features.get("HalfBath", 0) +
                              features.get("BsmtFullBath", 0) + 0.5 * features.get("BsmtHalfBath", 0))
     features["TotalPorchSF"] = (features.get("OpenPorchSF", 0) + features.get("EnclosedPorch", 0) +
@@ -77,7 +79,7 @@ def preprocess(input_json: dict) -> np.ndarray:
     features["TotalRooms"] = features["TotRmsAbvGrd"] + features["FullBath"] + features.get("HalfBath", 0)
     features["AvgRoomSize"] = features["GrLivArea"] / (features["TotRmsAbvGrd"] + 1)
 
-    # 3. label encode categoricals
+    # Label encode categoricals
     for col, classes in LABEL_ENCODERS.items():
         if col in features:
             val = features[col]
@@ -87,23 +89,22 @@ def preprocess(input_json: dict) -> np.ndarray:
             else:
                 features[col] = int(float(val))
 
-    # 4. build array in exact order of feature_names
+    # Build array in exact order of FEATURE_NAMES
     X = np.array([features[col] for col in FEATURE_NAMES], dtype=np.float32)
 
-    # 5. log1p skewed features
+    # Log-transform skewed features
     for col in SKEW_COLS:
         idx = FEATURE_NAMES.index(col)
         X[idx] = np.log1p(max(0, X[idx]))
 
-    # 6. robust scaling (identical to training)
+    # Robust scaling
     X = (X - SCALER_CENTER) / (SCALER_SCALE + 1e-8)
     X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
 
     return X.reshape(1, -1)
 
-# -------------------------------------------------------------------
+# ──────────────────────────────────────────────
 # FastAPI app
-# -------------------------------------------------------------------
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -139,8 +140,7 @@ async def health():
 async def predict(request: PredictRequest):
     try:
         X = preprocess(request.dict())
-        out = session.run(None, {INPUT_NAME: X})
-        pred_log = float(out[0][0])
+        pred_log = model.predict(X)[0]
         price = np.expm1(pred_log)
         return {"predicted_price": round(price, 2)}
     except Exception as e:
