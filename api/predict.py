@@ -44,22 +44,32 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 
 def _load():
-    model   = joblib.load(os.path.join(MODELS_DIR, "xgb_model.pkl"))
-    scaler  = joblib.load(os.path.join(MODELS_DIR, "scaler.pkl"))
-    les     = joblib.load(os.path.join(MODELS_DIR, "label_encoders.pkl"))
+    from xgboost import XGBRegressor
+    model_json = os.path.join(MODELS_DIR, "xgb_model.json")
+    model_pkl  = os.path.join(MODELS_DIR, "xgb_model.pkl")
+
+    if os.path.exists(model_json):
+        # Native format: faster load AND faster predict
+        model = XGBRegressor()
+        model.load_model(model_json)
+    else:
+        model = joblib.load(model_pkl)
+
+    scaler     = joblib.load(os.path.join(MODELS_DIR, "scaler.pkl"))
+    les        = joblib.load(os.path.join(MODELS_DIR, "label_encoders.pkl"))
     feat_names = joblib.load(os.path.join(MODELS_DIR, "feature_names.pkl"))
-    meta    = joblib.load(os.path.join(MODELS_DIR, "default_values.pkl"))
+    meta       = joblib.load(os.path.join(MODELS_DIR, "default_values.pkl"))
     return model, scaler, les, feat_names, meta
 
 
 try:
-    print("⏳  Loading model artefacts...")
+    print("[INFO] Loading model artefacts...")
     XGB_MODEL, SCALER, LABEL_ENCODERS, FEATURE_NAMES, META = _load()
     DEFAULT_VALUES = META["default_values"]
     SKEW_COLS      = META["skew_cols"]
-    print("✅  Models loaded successfully.")
+    print("[OK] Models loaded successfully.")
 except Exception as exc:
-    print(f"❌  Could not load models: {exc}")
+    print(f"[ERROR] Could not load models: {exc}")
     XGB_MODEL = SCALER = LABEL_ENCODERS = FEATURE_NAMES = DEFAULT_VALUES = SKEW_COLS = None
 
 # ──────────────────────────────────────────────
@@ -187,26 +197,26 @@ def neighborhoods():
 
 @app.post("/api/predict")
 def predict(feat: HouseFeatures):
-    print(f"📥  Prediction request received: {feat.dict()}")
+    print(f"[REQ] Prediction request received: {feat.dict()}")
     if XGB_MODEL is None:
-        print("❌  Prediction failed: Model not loaded.")
+        print("[ERROR] Prediction failed: Model not loaded.")
         raise HTTPException(status_code=503, detail="Model not loaded. Run train_and_save.py first.")
 
     try:
-        print("🛠️  Pre-processing...")
+        print("[INFO] Pre-processing...")
         df_row = _build_row(feat)
         X      = _preprocess(df_row)
         
-        print("🧠  Running inference...")
+        print("[INFO] Running inference...")
         log_pred = XGB_MODEL.predict(X)[0]
         price    = float(np.expm1(log_pred))
         
         # Clamp to a sane range
         price = max(50_000, min(price, 1_500_000))
-        print(f"✨  Prediction complete: ${price:,.2f}")
+        print(f"[OK] Prediction complete: ${price:,.2f}")
         return {"predicted_price": round(price, 2)}
     except Exception as exc:
-        print(f"💥  Prediction error: {exc}")
+        print(f"[ERROR] Prediction error: {exc}")
         raise HTTPException(status_code=500, detail=str(exc))
 
 # ── Mount static files at root (must be last)

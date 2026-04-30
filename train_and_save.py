@@ -131,12 +131,15 @@ for col in df.columns:
 print("Training XGBoost …")
 xgb = XGBRegressor(
     colsample_bytree=0.5,
-    learning_rate=0.01,
-    max_depth=3,
-    n_estimators=2000,
-    subsample=0.7,
+    learning_rate=0.05,  # increased from 0.01 → fewer trees needed
+    max_depth=4,
+    n_estimators=500,   # reduced from 2000 → 4x faster prediction
+    subsample=0.8,
+    reg_alpha=0.1,
+    reg_lambda=1.0,
     random_state=42,
-    n_jobs=-1,
+    n_jobs=1,           # single thread → consistent fast inference
+    tree_method="hist", # faster training & inference
     verbosity=0,
 )
 xgb.fit(X, y)
@@ -144,7 +147,9 @@ xgb.fit(X, y)
 # ──────────────────────────────────────────────
 # 9. Save artefacts
 # ──────────────────────────────────────────────
-joblib.dump(xgb,            os.path.join(MODELS_DIR, "xgb_model.pkl"))
+# Save in native XGBoost JSON format (faster load & predict than pickle)
+xgb.save_model(os.path.join(MODELS_DIR, "xgb_model.json"))
+joblib.dump(xgb,            os.path.join(MODELS_DIR, "xgb_model.pkl"))  # keep pkl as fallback
 joblib.dump(scaler,         os.path.join(MODELS_DIR, "scaler.pkl"))
 joblib.dump(label_encoders, os.path.join(MODELS_DIR, "label_encoders.pkl"))
 joblib.dump(feature_names,  os.path.join(MODELS_DIR, "feature_names.pkl"))
