@@ -1,180 +1,147 @@
-"""
-api/predict.py
---------------
-Pure Python serverless function for Vercel using ONNX.
-"""
+import sys
 import os
 import json
 import numpy as np
 import onnxruntime as ort
-from http.server import BaseHTTPRequestHandler
 
-# ──────────────────────────────────────────────
-# Load artefacts once at cold-start
-# ──────────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODELS_DIR = os.path.join(BASE_DIR, "models")
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
 
-def _load():
-    onnx_path = os.path.join(MODELS_DIR, "xgb_model.onnx")
-    
-    # Load ONNX session
-    # Note: onnxruntime is much lighter than xgboost
-    session = ort.InferenceSession(onnx_path)
+# 1. Load all lightweight configs at import time
+with open(os.path.join(MODEL_DIR, "feature_names.json")) as f:
+    FEATURE_NAMES = json.load(f)
 
-    with open(os.path.join(MODELS_DIR, "scaler.json")) as f:
-        scaler = json.load(f)
-    
-    with open(os.path.join(MODELS_DIR, "label_encoders.json")) as f:
-        les = json.load(f)
-        
-    with open(os.path.join(MODELS_DIR, "feature_names.json")) as f:
-        feat_names = json.load(f)
-        
-    with open(os.path.join(MODELS_DIR, "meta.json")) as f:
-        meta = json.load(f)
-        
-    return session, scaler, les, feat_names, meta
+with open(os.path.join(MODEL_DIR, "scaler.json")) as f:
+    sc = json.load(f)
+    SCALER_CENTER = np.array(sc["center"], dtype=np.float32)
+    SCALER_SCALE  = np.array(sc["scale"], dtype=np.float32)
 
-LOAD_ERROR = None
-try:
-    print("[INFO] Loading ONNX model...")
-    SESSION, SCALER, LABEL_ENCODERS, FEATURE_NAMES, META = _load()
-    DEFAULT_VALUES = META["default_values"]
-    SKEW_COLS      = META["skew_cols"]
-    print("[OK] ONNX model loaded successfully.")
-except Exception as exc:
-    LOAD_ERROR = str(exc)
-    print(f"[ERROR] Could not load models: {exc}")
-    SESSION = SCALER = LABEL_ENCODERS = FEATURE_NAMES = DEFAULT_VALUES = SKEW_COLS = None
+with open(os.path.join(MODEL_DIR, "label_encoders.json")) as f:
+    LABEL_ENCODERS = json.load(f)
 
-def _build_row(feat: dict) -> np.ndarray:
-    row = dict(DEFAULT_VALUES)
+with open(os.path.join(MODEL_DIR, "meta.json")) as f:
+    meta = json.load(f)
+    DEFAULT_VALUES = meta["default_values"]
+    SKEW_COLS = meta.get("skew_cols", [])
 
-    row["OverallQual"]   = feat.get("OverallQual", 5)
-    row["GrLivArea"]     = feat.get("GrLivArea", 1500.0)
-    row["YearBuilt"]     = feat.get("YearBuilt", 1970)
-    row["GarageCars"]    = feat.get("GarageCars", 2)
-    row["KitchenAbvGrd"] = feat.get("KitchenAbvGrd", 1)
-    row["Fireplaces"]    = feat.get("Fireplaces", 0)
-    row["FullBath"]      = feat.get("FullBath", 2)
-    row["LotArea"]       = feat.get("LotArea", 10000.0)
-    row["TotRmsAbvGrd"]  = feat.get("TotRmsAbvGrd", 6)
+# 2. Load the ONNX model (only once)
+ONNX_PATH = os.path.join(MODEL_DIR, "xgb_model.onnx")
+session = ort.InferenceSession(ONNX_PATH)
+INPUT_NAME = session.get_inputs()[0].name
+print("✅ Model ready", file=sys.stderr)
 
-    nbhd_raw = feat.get("Neighborhood", "")
-    if "Neighborhood" in LABEL_ENCODERS:
-        classes = LABEL_ENCODERS["Neighborhood"]
-        if nbhd_raw in classes:
-            row["Neighborhood"] = classes.index(nbhd_raw)
-        else:
-            row["Neighborhood"] = classes.index(classes[0])
-    else:
-        row["Neighborhood"] = 0
+# -------------------------------------------------------------------
+# Preprocessing (mirrors train_and_save.py)
+# -------------------------------------------------------------------
+def preprocess(input_json: dict) -> np.ndarray:
+    features = DEFAULT_VALUES.copy()
 
-    yr_sold = int(row.get("YrSold", 2010))
-    row["YearBuilt"]      = feat.get("YearBuilt", 1970)
-    row["YearRemodAdd"]   = row.get("YearRemodAdd", row["YearBuilt"])
+    # 1. override with user input
+    user = {
+        "OverallQual": int(input_json["OverallQual"]),
+        "GrLivArea": float(input_json["GrLivArea"]),
+        "Neighborhood": input_json["Neighborhood"],
+        "YearBuilt": int(input_json["YearBuilt"]),
+        "TotalSF": float(input_json["TotalSF"]),
+        "HouseAge": int(input_json["HouseAge"]),
+        "GarageCars": int(input_json["GarageCars"]),
+        "KitchenAbvGr": int(input_json["KitchenAbvGr"]),
+        "Fireplaces": int(input_json["Fireplaces"]),
+        "FullBath": int(input_json["FullBath"]),
+        "LotArea": float(input_json["LotArea"]),
+        "TotRmsAbvGrd": int(input_json["TotRmsAbvGrd"]),
+    }
+    for k, v in user.items():
+        features[k] = v
 
-    total_bsmt = row.get("TotalBsmtSF", 0)
-    first_flr  = row.get("1stFlrSF", 0)
-    second_flr = row.get("2ndFlrSF", 0)
+    # 2. engineered features
+    features["TotalBath"] = (features["FullBath"] + 0.5 * features.get("HalfBath", 0) +
+                             features.get("BsmtFullBath", 0) + 0.5 * features.get("BsmtHalfBath", 0))
+    features["TotalPorchSF"] = (features.get("OpenPorchSF", 0) + features.get("EnclosedPorch", 0) +
+                                features.get("3SsnPorch", 0) + features.get("ScreenPorch", 0))
+    features["HouseAge"] = features["YrSold"] - features["YearBuilt"]
+    features["RemodelAge"] = features["YrSold"] - features.get("YearRemodAdd", features["YearBuilt"])
+    features["HasRemodel"] = 1 if features.get("YearRemodAdd", features["YearBuilt"]) != features["YearBuilt"] else 0
+    features["HasGarage"] = 1 if features.get("GarageArea", 0) > 0 else 0
+    features["HasBsmt"] = 1 if features.get("TotalBsmtSF", 0) > 0 else 0
+    features["HasFireplace"] = 1 if features["Fireplaces"] > 0 else 0
+    features["Has2ndFloor"] = 1 if features.get("2ndFlrSF", 0) > 0 else 0
+    features["HasWoodDeck"] = 1 if features.get("WoodDeckSF", 0) > 0 else 0
+    features["HasOpenPorch"] = 1 if features.get("OpenPorchSF", 0) > 0 else 0
+    features["HasPool"] = 1 if features.get("PoolArea", 0) > 0 else 0
+    features["LotPerSF"] = features["LotArea"] / (features["TotalSF"] + 1)
+    features["GarageRatio"] = features.get("GarageArea", 0) / (features["TotalSF"] + 1)
+    features["OverallQual2"] = features["OverallQual"] ** 2
+    features["OverallQual3"] = features["OverallQual"] ** 3
+    features["QualPerSF"] = features["OverallQual"] / (features["TotalSF"] + 1)
+    features["YearBuilt2"] = features["YearBuilt"] ** 2
+    features["TotalRooms"] = features["TotRmsAbvGrd"] + features["FullBath"] + features.get("HalfBath", 0)
+    features["AvgRoomSize"] = features["GrLivArea"] / (features["TotRmsAbvGrd"] + 1)
 
-    row["TotalSF"]      = feat.get("TotalSF", 1500.0)
-    row["TotalBath"]    = (feat.get("FullBath", 2) + 0.5 * row.get("HalfBath", 0) +
-                           row.get("BsmtFullBath", 0) + 0.5 * row.get("BsmtHalfBath", 0))
-    row["TotalPorchSF"] = (row.get("OpenPorchSF", 0) + row.get("EnclosedPorch", 0) +
-                           row.get("3SsnPorch", 0) + row.get("ScreenPorch", 0))
-    row["HouseAge"]     = feat.get("HouseAge", 20)
-    row["RemodelAge"]   = yr_sold - int(row.get("YearRemodAdd", row["YearBuilt"]))
-    row["HasRemodel"]   = int(row.get("YearRemodAdd", row["YearBuilt"]) != row["YearBuilt"])
-    row["HasGarage"]    = int(row.get("GarageArea", 0) > 0)
-    row["HasBsmt"]      = int(total_bsmt > 0)
-    row["HasFireplace"] = int(feat.get("Fireplaces", 0) > 0)
-    row["Has2ndFloor"]  = int(second_flr > 0)
-    row["HasWoodDeck"]  = int(row.get("WoodDeckSF", 0) > 0)
-    row["HasOpenPorch"] = int(row.get("OpenPorchSF", 0) > 0)
-    row["HasPool"]      = int(row.get("PoolArea", 0) > 0)
-    row["LotPerSF"]     = feat.get("LotArea", 10000.0) / (feat.get("TotalSF", 1500.0) + 1)
-    row["GarageRatio"]  = row.get("GarageArea", 0) / (feat.get("TotalSF", 1500.0) + 1)
-    row["OverallQual2"] = feat.get("OverallQual", 5) ** 2
-    row["OverallQual3"] = feat.get("OverallQual", 5) ** 3
-    row["QualPerSF"]    = feat.get("OverallQual", 5) / (feat.get("TotalSF", 1500.0) + 1)
-    row["YearBuilt2"]   = feat.get("YearBuilt", 1970) ** 2
-    row["TotalRooms"]   = feat.get("TotRmsAbvGrd", 6) + feat.get("FullBath", 2) + row.get("HalfBath", 0)
-    row["AvgRoomSize"]  = feat.get("GrLivArea", 1500.0) / (feat.get("TotRmsAbvGrd", 6) + 1)
+    # 3. label encode categoricals
+    for col, classes in LABEL_ENCODERS.items():
+        if col in features:
+            val = features[col]
+            if isinstance(val, str):
+                idx = classes.index(val) if val in classes else 0
+                features[col] = idx
+            else:
+                features[col] = int(float(val))
 
-    row_values = [row.get(col, 0) for col in FEATURE_NAMES]
-    return np.array([row_values], dtype=np.float32)
+    # 4. build array in exact order of feature_names
+    X = np.array([features[col] for col in FEATURE_NAMES], dtype=np.float32)
 
-def _preprocess(X: np.ndarray) -> np.ndarray:
-    skew_indices = [FEATURE_NAMES.index(col) for col in SKEW_COLS if col in FEATURE_NAMES]
-    for idx in skew_indices:
-        X[0, idx] = np.log1p(max(0, X[0, idx]))
-        
-    center = np.array(SCALER["center"])
-    scale = np.array(SCALER["scale"])
-    scale[scale == 0] = 1.0
-    return (X - center) / scale
+    # 5. log1p skewed features
+    for col in SKEW_COLS:
+        idx = FEATURE_NAMES.index(col)
+        X[idx] = np.log1p(max(0, X[idx]))
 
+    # 6. robust scaling (identical to training)
+    X = (X - SCALER_CENTER) / (SCALER_SCALE + 1e-8)
+    X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
 
-class handler(BaseHTTPRequestHandler):
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
+    return X.reshape(1, -1)
 
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.end_headers()
-        res = {"status": "ok", "model_loaded": SESSION is not None, "error": LOAD_ERROR}
-        self.wfile.write(json.dumps(res).encode('utf-8'))
+# -------------------------------------------------------------------
+# FastAPI app
+# -------------------------------------------------------------------
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-    def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        post_data = self.rfile.read(content_length)
-        
-        try:
-            feat = json.loads(post_data.decode('utf-8'))
-        except:
-            self.send_response(400)
-            self.end_headers()
-            self.wfile.write(b'{"detail": "Invalid JSON"}')
-            return
+app = FastAPI()
 
-        if SESSION is None:
-            self.send_response(503)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            err_msg = f"Model not loaded. Error: {LOAD_ERROR}"
-            self.wfile.write(json.dumps({"detail": err_msg}).encode('utf-8'))
-            return
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-        try:
-            df_row = _build_row(feat)
-            X = _preprocess(df_row)
-            X = X.astype(np.float32)
-            
-            # ONNX Inference
-            input_name = SESSION.get_inputs()[0].name
-            output = SESSION.run(None, {input_name: X})
-            log_pred = float(output[0][0])
-            
-            price = float(np.expm1(log_pred))
-            price = max(50_000, min(price, 1_500_000))
-            
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            self.wfile.write(json.dumps({"predicted_price": round(price, 2)}).encode('utf-8'))
-        except Exception as exc:
-            self.send_response(500)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            self.wfile.write(json.dumps({"detail": str(exc)}).encode('utf-8'))
+class PredictRequest(BaseModel):
+    OverallQual: int
+    GrLivArea: float
+    Neighborhood: str
+    YearBuilt: int
+    TotalSF: float
+    HouseAge: int
+    GarageCars: int
+    KitchenAbvGr: int
+    Fireplaces: int
+    FullBath: int
+    LotArea: float
+    TotRmsAbvGrd: int
+
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "model_loaded": True}
+
+@app.post("/api/predict")
+async def predict(request: PredictRequest):
+    try:
+        X = preprocess(request.dict())
+        out = session.run(None, {INPUT_NAME: X})
+        pred_log = float(out[0][0])
+        price = np.expm1(pred_log)
+        return {"predicted_price": round(price, 2)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
