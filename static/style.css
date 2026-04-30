@@ -1229,12 +1229,16 @@ label .tooltip:hover {
   100% { transform: rotate(360deg); }
 }
 
-/* Light mode (solid white card) */
-[data-theme="light"] .rgb-side-card {
-  background: #ffffff;
-}
+/* ===== Light mode: no rainbow border, just a simple static border ===== */
+[data-theme="light"] .rgb-side-card::before,
 [data-theme="light"] .rgb-side-card::after {
-  background: #ffffff;
+  display: none;                     /* completely hides the moving light */
+}
+
+[data-theme="light"] .rgb-side-card {
+  background: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);   /* a subtle, clean shadow */
+  border: 1px solid rgba(0,0,0,0.1);          /* a quiet border to keep the shape */
 }
 
 /* Force solid dark background on stats bar */
@@ -1246,6 +1250,7 @@ label .tooltip:hover {
 }
 [data-theme="light"] .stats-bar.rgb-side-card {
   background: #ffffff !important;
+  border: 1px solid rgba(0,0,0,0.1);
 }
 
 /* Force solid dark background on step cards */
@@ -1254,7 +1259,9 @@ label .tooltip:hover {
 }
 [data-theme="light"] .step-card.rgb-side-card {
   background: #ffffff !important;
+  border: 1px solid rgba(0,0,0,0.1);
 }
+
 
 /* Custom dropdown container */
 .custom-dropdown {

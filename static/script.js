@@ -283,11 +283,45 @@ document.querySelectorAll(".feat-bar").forEach(bar => {
   }
 })();
 
-// Animate shadow colour to match the conic-gradient
-document.querySelectorAll('.rgb-side-card').forEach(card => {
-  let hue = 0;
-  setInterval(() => {
-    hue = (hue + 2) % 360;
-    card.style.boxShadow = `0 0 30px hsl(${hue}, 100%, 60%)`;
-  }, 50);
-});
+// ─── Shadow Animation (Dark Mode Only) ───────────────────────────
+(function() {
+  const cards = document.querySelectorAll('.rgb-side-card');
+  let intervals = [];
+
+  function startAnimation() {
+    // Avoid double-starting
+    if (intervals.length > 0) return;
+    
+    cards.forEach((card, i) => {
+      let hue = 0;
+      intervals[i] = setInterval(() => {
+        hue = (hue + 2) % 360;
+        card.style.boxShadow = `0 0 30px hsl(${hue}, 100%, 60%)`;
+      }, 50);
+    });
+  }
+
+  function stopAnimation() {
+    intervals.forEach(clearInterval);
+    intervals = [];
+    cards.forEach(card => {
+      card.style.boxShadow = '';   // revert to CSS default
+    });
+  }
+
+  // Initial check
+  if (document.documentElement.getAttribute('data-theme') !== 'light') {
+    startAnimation();
+  }
+
+  // Listen for theme changes on <html>
+  const observer = new MutationObserver(() => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if (isLight) {
+      stopAnimation();
+    } else {
+      startAnimation();
+    }
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
