@@ -142,7 +142,7 @@ async def predict(request: PredictRequest):
         # ONNX inference
         inputs = {session.get_inputs()[0].name: X}
         pred_log = session.run(None, inputs)[0][0][0]
-        price = np.expm1(pred_log)
+        price = float(np.expm1(pred_log))
         return {"predicted_price": round(price, 2)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
