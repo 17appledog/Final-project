@@ -91,24 +91,19 @@ df["TotalRooms"]    = df["TotRmsAbvGrd"] + df["FullBath"] + df["HalfBath"]
 df["AvgRoomSize"]   = df["GrLivArea"] / (df["TotRmsAbvGrd"] + 1)
 
 # ──────────────────────────────────────────────
-# 4. Log-transform skewed CONTINUOUS features
+# 4. Log-transform skewed numeric features (original continuous only)
 # ──────────────────────────────────────────────
-# Identify truly continuous features (exclude ordinal, binary, and discrete counts)
-cont_features = [
-    "LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF",
-    "TotalBsmtSF", "1stFlrSF", "2ndFlrSF", "LowQualFinSF", "GrLivArea", "GarageArea",
-    "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "3SsnPorch", "ScreenPorch", "PoolArea", "MiscVal",
-    # Engineered continuous features
-    "TotalSF", "TotalPorchSF", "LotPerSF", "GarageRatio", "QualPerSF", "AvgRoomSize"
-]
-cont_features = [f for f in cont_features if f in df.columns]
-
-skewness = df[cont_features].apply(lambda x: skew(x.dropna()))
+original_num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+skewness = df[original_num_cols].apply(lambda x: skew(x.dropna()))
 high_skew = skewness[skewness.abs() > 0.5].index.tolist()
-SKEW_COLS = high_skew  # save for predict.py reference
 
-print(f"Applying log1p to {len(SKEW_COLS)} skewed continuous features...")
-for col in SKEW_COLS:
+# Never log-transform binary / one-hot-like features
+binary_cols = [c for c in high_skew if df[c].nunique() <= 2]
+high_skew = [c for c in high_skew if c not in binary_cols]
+
+SKEW_COLS = high_skew
+print(f"Applying log1p to {len(SKEW_COLS)} skewed features (excluding binary)...")
+for col in high_skew:
     df[col] = np.log1p(df[col].clip(lower=0))
 
 # ──────────────────────────────────────────────
