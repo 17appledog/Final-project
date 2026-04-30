@@ -43,12 +43,11 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 
 def _load():
-    from xgboost import XGBRegressor
-    model_json = os.path.join(MODELS_DIR, "xgb_model.json")
+    import onnxruntime as ort
+    model_onnx = os.path.join(MODELS_DIR, "xgb_model.onnx")
 
-    # Native format: faster load AND faster predict
-    model = XGBRegressor()
-    model.load_model(model_json)
+    # Load ONNX model
+    model = ort.InferenceSession(model_onnx)
 
     with open(os.path.join(MODELS_DIR, "scaler.json")) as f:
         scaler = json.load(f)
@@ -223,8 +222,13 @@ def predict(feat: HouseFeatures):
         df_row = _build_row(feat)
         X      = _preprocess(df_row)
         
+        # Ensure X is float32 for ONNX
+        X = X.astype(np.float32)
+        
         print("[INFO] Running inference...")
-        log_pred = XGB_MODEL.predict(X)[0]
+        input_name = XGB_MODEL.get_inputs()[0].name
+        output = XGB_MODEL.run(None, {input_name: X})
+        log_pred = output[0][0][0] if len(output[0].shape) > 1 else output[0][0]
         price    = float(np.expm1(log_pred))
         
         # Clamp to a sane range

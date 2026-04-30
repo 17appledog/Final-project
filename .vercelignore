@@ -5,4 +5,5 @@ train.csv
 train_and_save.py
 extract_artefacts.py
 models/*.pkl
+models/xgb_model.json
 .git
