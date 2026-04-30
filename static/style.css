@@ -682,54 +682,49 @@ label .tooltip:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* ---------- Running RGB border card ---------- */
-.animated-card {
+/* ---------- Form card with RGB side stripe + shadow ---------- */
+.rgb-side-card {
   position: relative;
-  padding: 3px;                 /* Thin space for the border to show */
-  border-radius: 24px;
-  background: rgba(17, 17, 30, 0.85);   /* dark glass effect */
-  backdrop-filter: blur(10px);
-  overflow: hidden;                     /* keep the pseudo-element inside */
-  z-index: 1;
+  padding: 2rem;
+  border-radius: 16px;
+  background: rgba(17, 17, 30, 0.8);          /* dark glass */
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 30px rgba(167, 139, 250, 0.25),    /* soft purple glow */
+              0 20px 40px rgba(0, 0, 0, 0.4);         /* depth */
+  overflow: hidden;
+  transition: box-shadow 0.8s ease;
 }
 
-/* The moving gradient border */
-.animated-card::before {
+/* The animated RGB line on the left */
+.rgb-side-card::before {
   content: "";
   position: absolute;
-  top: -50%; left: -50%; width: 200%; height: 200%;
-  z-index: -1;
-  background: conic-gradient(
-    from 0deg,
-    #ff0080, #ff8c00, #40e0d0, #7928ca, #ff0080
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(
+    270deg,
+    #ff0080, #ff8c00, #40e0d0, #7928ca, #00f2fe, #ff0080
   );
-  animation: rotateRGB 4s linear infinite;
-  filter: blur(8px);
-  opacity: 0.8;
+  background-size: 400% 400%;
+  animation: rgbShift 4s linear infinite;
+  z-index: 2;
+  border-radius: 16px 0 0 16px;   /* match card rounding */
 }
 
-/* Inner background to hide the blur inside the card */
-.animated-card::after {
-  content: "";
-  position: absolute;
-  inset: 3px;                  /* leave a thin border visible */
-  background: var(--surface);
-  border-radius: 21px;
-  z-index: -1;
+/* Rotating colour */
+@keyframes rgbShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Rotation keyframe */
-@keyframes rotateRGB {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Light mode adjustments */
-[data-theme="light"] .animated-card {
+/* Light mode overrides */
+[data-theme="light"] .rgb-side-card {
   background: rgba(255, 255, 255, 0.85);
-}
-[data-theme="light"] .animated-card::after {
-  background: var(--surface);
+  box-shadow: 0 0 30px rgba(167, 139, 250, 0.1),
+              0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 /* Custom dropdown container */
