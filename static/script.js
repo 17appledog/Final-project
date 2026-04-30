@@ -92,7 +92,7 @@ function readForm() {
   };
 
   const intFields = ["OverallQual","YearBuilt","HouseAge","GarageCars",
-                     "KitchenAbvGrd","Fireplaces","FullBath","TotRmsAbvGrd"];
+                     "KitchenAbvGr","Fireplaces","FullBath","TotRmsAbvGrd"];
   const floatFields = ["GrLivArea","TotalSF","LotArea"];
   const strFields = ["Neighborhood"];
 
