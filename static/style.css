@@ -682,22 +682,21 @@ label .tooltip:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* ---------- Card with running light around the border ---------- */
+/* ---------- Card with moving neon border (no transparency) ---------- */
 .rgb-side-card {
   position: relative;
   padding: 2rem;
   border-radius: 18px;
-  background: rgba(17, 17, 30, 0.85);
-  backdrop-filter: blur(10px);
+  background: #16162a;          /* solid dark – no transparency */
   z-index: 1;
-  overflow: visible;             /* Allow border glow to show */
+  /* no backdrop-filter → no see-through */
 }
 
-/* The moving light – a pseudo-element bigger than the card */
+/* The moving light – placed behind the card but clipped to border */
 .rgb-side-card::before {
   content: "";
   position: absolute;
-  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  top: -3px; left: -3px; right: -3px; bottom: -3px;
   z-index: -1;
   background: conic-gradient(
     from 0deg at 50% 50%,
@@ -705,30 +704,29 @@ label .tooltip:hover {
   );
   border-radius: 20px;
   animation: spinLight 5s linear infinite;
-  filter: blur(8px);
+  filter: blur(6px);          /* slight blur for the neon glow */
 }
 
-/* Inner mask to keep the card background clean */
+/* Inner card – fills the area, leaving only the border visible */
 .rgb-side-card::after {
   content: "";
   position: absolute;
   inset: 2px;
-  background: var(--surface);
+  background: #16162a;         /* EXACTLY the same colour as the card */
   border-radius: 16px;
   z-index: -1;
 }
 
-/* Rotation keyframe */
 @keyframes spinLight {
   100% { transform: rotate(360deg); }
 }
 
-/* Light mode adjustments */
+/* Light mode overrides */
 [data-theme="light"] .rgb-side-card {
-  background: rgba(255, 255, 255, 0.85);
+  background: #ffffff;        /* solid white */
 }
 [data-theme="light"] .rgb-side-card::after {
-  background: rgba(255, 255, 255, 0.95);
+  background: #ffffff;
 }
 
 /* Custom dropdown container */
