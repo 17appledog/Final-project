@@ -292,22 +292,30 @@ form { padding: 32px 40px 40px; }
   display: flex; align-items: center; gap: 6px;
 }
 
-.field-tooltip {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--surface2); border: 1px solid var(--border);
-  font-size: 0.7rem; color: var(--text-muted); cursor: help;
-  position: relative; font-weight: 700;
+.field-tooltip, 
+label abbr[title],
+label .tooltip,
+label .info-icon {
+  color: #6b7280;
+  text-decoration: none;
+  border-bottom: none;
+  cursor: help;
+  font-weight: bold;
+  margin-left: 4px;
   transition: all var(--transition);
-  opacity: 0.8;
 }
 
-.field-tooltip:hover {
-  background: var(--accent);
+.field-tooltip:hover,
+label abbr[title]:hover,
+label .tooltip:hover {
   color: #fff;
-  opacity: 1;
-  border-color: var(--accent);
   transform: scale(1.1);
+}
+
+[data-theme="light"] .field-tooltip:hover,
+[data-theme="light"] label abbr[title]:hover,
+[data-theme="light"] label .tooltip:hover {
+  color: #000;
 }
 
 .field-tooltip:hover::after {
