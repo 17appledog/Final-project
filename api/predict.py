@@ -19,11 +19,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 def _load():
-    import onnxruntime as ort
-    model_onnx = os.path.join(MODELS_DIR, "xgb_model.onnx")
+    from xgboost import XGBRegressor
+    model_json = os.path.join(MODELS_DIR, "xgb_model.json")
 
-    # Load ONNX model
-    model = ort.InferenceSession(model_onnx)
+    model = XGBRegressor()
+    model.load_model(model_json)
 
     with open(os.path.join(MODELS_DIR, "scaler.json")) as f:
         scaler = json.load(f)
@@ -162,9 +162,8 @@ class handler(BaseHTTPRequestHandler):
             X = _preprocess(df_row)
             X = X.astype(np.float32)
             
-            input_name = XGB_MODEL.get_inputs()[0].name
-            output = XGB_MODEL.run(None, {input_name: X})
-            log_pred = output[0][0][0] if len(output[0].shape) > 1 else output[0][0]
+            input_name = XGB_MODEL.predict(X)[0]
+            log_pred = float(input_name)
             price = float(np.expm1(log_pred))
             price = max(50_000, min(price, 1_500_000))
             
