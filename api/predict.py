@@ -39,6 +39,7 @@ def _load():
         
     return model, scaler, les, feat_names, meta
 
+LOAD_ERROR = None
 try:
     print("[INFO] Loading model artefacts...")
     XGB_MODEL, SCALER, LABEL_ENCODERS, FEATURE_NAMES, META = _load()
@@ -46,6 +47,7 @@ try:
     SKEW_COLS      = META["skew_cols"]
     print("[OK] Models loaded successfully.")
 except Exception as exc:
+    LOAD_ERROR = str(exc)
     print(f"[ERROR] Could not load models: {exc}")
     XGB_MODEL = SCALER = LABEL_ENCODERS = FEATURE_NAMES = DEFAULT_VALUES = SKEW_COLS = None
 
@@ -151,7 +153,8 @@ class handler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(b'{"detail": "Model not loaded."}')
+            err_msg = f"Model not loaded. Error: {LOAD_ERROR}"
+            self.wfile.write(json.dumps({"detail": err_msg}).encode('utf-8'))
             return
 
         try:
