@@ -586,16 +586,76 @@ label .tooltip:hover {
 /* ══════════════════════════════════════════════
    FOOTER
 ══════════════════════════════════════════════ */
-.site-footer {
-  position: relative; z-index: 1;
-  text-align: center; padding: 60px 24px;
-  border-top: 1px solid var(--border);
-  color: var(--text-muted); font-size: 0.9rem;
-  line-height: 1.6;
+/* ---------- Footer ---------- */
+.footer {
+  padding: 2.5rem 1.5rem 1.5rem;
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
-.site-footer p { margin-bottom: 16px; }
-.site-footer strong { color: var(--accent2); }
-.footer-sub { color: var(--text-dim); font-size: 0.78rem; margin-top: 24px; }
+
+.footer__content {
+  animation: footerFadeIn 1.2s ease-out both;
+}
+
+/* The team line with a shifting gradient */
+.footer__gradient-text {
+  background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399, #a78bfa);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: footerGradientShift 4s ease infinite;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+}
+
+/* Members line */
+.footer__members {
+  font-size: 0.95rem;
+  color: var(--text-muted, #9ca3af);
+  margin-top: 0.5rem;
+}
+
+/* Disclaimer */
+.footer__disclaimer {
+  font-size: 0.85rem;
+  color: var(--text-dim, #6b7280);
+  margin-top: 0.6rem;
+  font-style: italic;
+}
+
+/* ---------- Keyframe animations ---------- */
+@keyframes footerFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes footerGradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Dark / Light mode tweaks */
+[data-theme="light"] .footer {
+  border-top-color: rgba(0,0,0,0.08);
+}
+[data-theme="light"] .footer__members {
+  color: #4b5563;
+}
+[data-theme="light"] .footer__disclaimer {
+  color: #6b7280;
+}
 
 /* ══════════════════════════════════════════════
    ANIMATIONS
