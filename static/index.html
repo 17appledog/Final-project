@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ames House Price Predictor | AI-Powered Valuation</title>
+  <meta name="description" content="Instantly predict your Ames home's sale price using our XGBoost AI model trained on 1,400+ real transactions. Free, fast, no login required." />
+  <meta property="og:title" content="Ames House Price Predictor" />
+  <meta property="og:description" content="AI-powered home valuation using XGBoost · 91% accuracy · Free & instant" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Animated background ── -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <!-- ── Confetti container ── -->
+  <div id="confetti-container" aria-hidden="true"></div>
+
+  <!-- ── Header ── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🏡</span>
+        <span class="logo-text">AmesPredict<span class="logo-dot">.</span>ai</span>
+      </div>
+      <nav class="header-nav">
+        <a href="#how-it-works" class="nav-link">How it works</a>
+        <a href="#features-info" class="nav-link">Features</a>
+        <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
+          <span class="theme-icon">☀️</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      XGBoost · 91% R² · 1,400+ transactions
+    </div>
+    <h1 class="hero-title">
+      Predict Your<br />
+      <span class="gradient-text">Home's Value</span><br />
+      Instantly
+    </h1>
+    <p class="hero-subtitle">
+      Enter 12 key features and our AI model returns a market valuation in under a second.
+      No login. No cost. No nonsense.
+    </p>
+    <a href="#predict-form" class="hero-cta">
+      Start Predicting
+      <span class="cta-arrow">↓</span>
+    </a>
+  </section>
+
+  <!-- ── Stats bar ── -->
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-val">91%</span>
+      <span class="stat-lbl">R² Score</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-val">~$23k</span>
+      <span class="stat-lbl">Avg Error</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-val">1,460</span>
+      <span class="stat-lbl">Homes Trained</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-val">0.115</span>
+      <span class="stat-lbl">RMSE (log)</span>
+    </div>
+  </div>
+
+  <!-- ── Main prediction form ── -->
+  <main id="predict-form" class="form-section">
+    <div class="form-card" role="main">
+      <div class="form-card-header">
+        <h2 class="form-title">Property Details</h2>
+        <p class="form-subtitle">Fill in the fields below — defaults are pre-set to Ames medians.</p>
+      </div>
+
+      <form id="house-form" novalidate>
+        <div class="form-grid">
+
+          <!-- OverallQual -->
+          <div class="field-group">
+            <label for="OverallQual" class="field-label">
+              Overall Quality
+              <span class="field-tooltip" data-tip="Material & finish quality: 1 (Very Poor) – 10 (Very Excellent)">?</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="OverallQual" name="OverallQual"
+                     min="1" max="10" value="6" step="1"
+                     class="slider" aria-valuemin="1" aria-valuemax="10" />
+              <span class="slider-val" id="OverallQual-val">6</span>
+            </div>
+            <div class="slider-labels"><span>Poor</span><span>Excellent</span></div>
+          </div>
+
+          <!-- GrLivArea -->
+          <div class="field-group">
+            <label for="GrLivArea" class="field-label">
+              Living Area (sq ft)
+              <span class="field-tooltip" data-tip="Above ground living area in square feet">?</span>
+            </label>
+            <div class="input-wrap">
+              <input type="number" id="GrLivArea" name="GrLivArea"
+                     value="1500" min="300" max="6000" step="10"
+                     class="text-input" placeholder="e.g. 1500" />
+              <span class="input-unit">sq ft</span>
+            </div>
+          </div>
+
+          <!-- Neighborhood -->
+          <div class="field-group">
+            <label for="Neighborhood" class="field-label">
+              Neighborhood
+              <span class="field-tooltip" data-tip="Physical location within Ames city limits">?</span>
+            </label>
+            <div class="select-wrap">
+              <select id="Neighborhood" name="Neighborhood" class="select-input">
+                <option value="NAmes">NAmes – North Ames</option>
+                <option value="CollgCr">CollgCr – College Creek</option>
+                <option value="OldTown">OldTown – Old Town</option>
+                <option value="Edwards">Edwards</option>
+                <option value="Somerst">Somerst – Somerset</option>
+                <option value="Gilbert">Gilbert</option>
+                <option value="NridgHt">NridgHt – Northridge Heights</option>
+                <option value="Sawyer">Sawyer</option>
+                <option value="NWAmes">NWAmes – Northwest Ames</option>
+                <option value="SawyerW">SawyerW – Sawyer West</option>
+                <option value="BrkSide">BrkSide – Brookside</option>
+                <option value="Crawfor">Crawfor – Crawford</option>
+                <option value="Mitchel">Mitchel</option>
+                <option value="NoRidge">NoRidge – Northridge</option>
+                <option value="Timber">Timber</option>
+                <option value="IDOTRR">IDOTRR – Iowa DOT and Rail Road</option>
+                <option value="ClearCr">ClearCr – Clear Creek</option>
+                <option value="StoneBr">StoneBr – Stone Brook</option>
+                <option value="SWISU">SWISU – South & West of ISU</option>
+                <option value="MeadowV">MeadowV – Meadow Village</option>
+                <option value="Blmngtn">Blmngtn – Bloomington Heights</option>
+                <option value="BrDale">BrDale – Briardale</option>
+                <option value="Veenker">Veenker</option>
+                <option value="NPkVill">NPkVill – Northpark Villa</option>
+                <option value="Blueste">Blueste – Bluestem</option>
+              </select>
+              <span class="select-arrow">▾</span>
+            </div>
+          </div>
+
+          <!-- YearBuilt -->
+          <div class="field-group">
+            <label for="YearBuilt" class="field-label">
+              Year Built
+              <span class="field-tooltip" data-tip="Original year of construction">?</span>
+            </label>
+            <div class="input-wrap">
+              <input type="number" id="YearBuilt" name="YearBuilt"
+                     value="1990" min="1872" max="2010" step="1"
+                     class="text-input" placeholder="e.g. 1990" />
+            </div>
+          </div>
+
+          <!-- TotalSF -->
+          <div class="field-group">
+            <label for="TotalSF" class="field-label">
+              Total Square Footage
+              <span class="field-tooltip" data-tip="Basement + 1st floor + 2nd floor combined">?</span>
+            </label>
+            <div class="input-wrap">
+              <input type="number" id="TotalSF" name="TotalSF"
+                     value="2000" min="300" max="12000" step="10"
+                     class="text-input" placeholder="e.g. 2000" />
+              <span class="input-unit">sq ft</span>
+            </div>
+          </div>
+
+          <!-- HouseAge -->
+          <div class="field-group">
+            <label for="HouseAge" class="field-label">
+              House Age (years)
+              <span class="field-tooltip" data-tip="Years since original construction (2010 – YearBuilt)">?</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="HouseAge" name="HouseAge"
+                     min="0" max="150" value="20" step="1"
+                     class="slider" />
+              <span class="slider-val" id="HouseAge-val">20</span>
+            </div>
+            <div class="slider-labels"><span>New</span><span>150+ yrs</span></div>
+          </div>
+
+          <!-- GarageCars -->
+          <div class="field-group">
+            <label for="GarageCars" class="field-label">
+              Garage Capacity (cars)
+              <span class="field-tooltip" data-tip="Number of cars the garage can hold (0–4)">?</span>
+            </label>
+            <div class="pill-selector" id="GarageCars-group" role="radiogroup" aria-label="Garage Capacity">
+              <button type="button" class="pill" data-val="0" data-name="GarageCars">0</button>
+              <button type="button" class="pill active" data-val="2" data-name="GarageCars">2</button>
+              <button type="button" class="pill" data-val="3" data-name="GarageCars">3</button>
+              <button type="button" class="pill" data-val="4" data-name="GarageCars">4</button>
+            </div>
+            <input type="hidden" id="GarageCars" name="GarageCars" value="2" />
+          </div>
+
+          <!-- KitchenAbvGrd -->
+          <div class="field-group">
+            <label for="KitchenAbvGrd" class="field-label">
+              Kitchens Above Grade
+              <span class="field-tooltip" data-tip="Number of kitchens on above-ground floors">?</span>
+            </label>
+            <div class="pill-selector" id="KitchenAbvGrd-group" role="radiogroup" aria-label="Kitchens Above Grade">
+              <button type="button" class="pill" data-val="0" data-name="KitchenAbvGrd">0</button>
+              <button type="button" class="pill active" data-val="1" data-name="KitchenAbvGrd">1</button>
+              <button type="button" class="pill" data-val="2" data-name="KitchenAbvGrd">2</button>
+              <button type="button" class="pill" data-val="3" data-name="KitchenAbvGrd">3</button>
+            </div>
+            <input type="hidden" id="KitchenAbvGrd" name="KitchenAbvGrd" value="1" />
+          </div>
+
+          <!-- Fireplaces -->
+          <div class="field-group">
+            <label for="Fireplaces" class="field-label">
+              Fireplaces
+              <span class="field-tooltip" data-tip="Number of fireplaces in the house">?</span>
+            </label>
+            <div class="pill-selector" id="Fireplaces-group" role="radiogroup" aria-label="Fireplaces">
+              <button type="button" class="pill active" data-val="0" data-name="Fireplaces">0</button>
+              <button type="button" class="pill" data-val="1" data-name="Fireplaces">1</button>
+              <button type="button" class="pill" data-val="2" data-name="Fireplaces">2</button>
+              <button type="button" class="pill" data-val="3" data-name="Fireplaces">3</button>
+            </div>
+            <input type="hidden" id="Fireplaces" name="Fireplaces" value="0" />
+          </div>
+
+          <!-- FullBath -->
+          <div class="field-group">
+            <label for="FullBath" class="field-label">
+              Full Bathrooms
+              <span class="field-tooltip" data-tip="Full bathrooms above grade (with shower/tub)">?</span>
+            </label>
+            <div class="pill-selector" id="FullBath-group" role="radiogroup" aria-label="Full Bathrooms">
+              <button type="button" class="pill" data-val="0" data-name="FullBath">0</button>
+              <button type="button" class="pill" data-val="1" data-name="FullBath">1</button>
+              <button type="button" class="pill active" data-val="2" data-name="FullBath">2</button>
+              <button type="button" class="pill" data-val="3" data-name="FullBath">3</button>
+              <button type="button" class="pill" data-val="4" data-name="FullBath">4</button>
+            </div>
+            <input type="hidden" id="FullBath" name="FullBath" value="2" />
+          </div>
+
+          <!-- LotArea -->
+          <div class="field-group">
+            <label for="LotArea" class="field-label">
+              Lot Area (sq ft)
+              <span class="field-tooltip" data-tip="Total lot size in square feet">?</span>
+            </label>
+            <div class="input-wrap">
+              <input type="number" id="LotArea" name="LotArea"
+                     value="9000" min="1300" max="215000" step="100"
+                     class="text-input" placeholder="e.g. 9000" />
+              <span class="input-unit">sq ft</span>
+            </div>
+          </div>
+
+          <!-- TotRmsAbvGrd -->
+          <div class="field-group">
+            <label for="TotRmsAbvGrd" class="field-label">
+              Total Rooms Above Grade
+              <span class="field-tooltip" data-tip="Total rooms above grade — bathrooms not included">?</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="TotRmsAbvGrd" name="TotRmsAbvGrd"
+                     min="2" max="14" value="7" step="1"
+                     class="slider" />
+              <span class="slider-val" id="TotRmsAbvGrd-val">7</span>
+            </div>
+            <div class="slider-labels"><span>2</span><span>14</span></div>
+          </div>
+
+        </div><!-- /.form-grid -->
+
+        <!-- Error message -->
+        <div id="form-error" class="form-error" role="alert" aria-live="polite"></div>
+
+        <!-- Submit -->
+        <button type="submit" id="predict-btn" class="predict-btn">
+          <span class="btn-text">Predict Price</span>
+          <span class="btn-icon">✨</span>
+          <div class="btn-glow"></div>
+        </button>
+      </form>
+
+      <!-- ── Result panel ── -->
+      <div id="result-panel" class="result-panel" aria-live="polite" hidden>
+        <div class="result-inner">
+          <div class="result-label">Estimated Market Value</div>
+          <div class="result-price" id="result-price">$0</div>
+          <div class="result-sub">Based on XGBoost model · Ames, Iowa market</div>
+          <div class="result-chips">
+            <span class="chip chip-green">91% R²</span>
+            <span class="chip chip-blue">±$23k avg error</span>
+            <span class="chip chip-purple">log-scale RMSE 0.115</span>
+          </div>
+          <button type="button" id="reset-btn" class="reset-btn">← New Prediction</button>
+        </div>
+      </div>
+
+      <!-- Loading overlay -->
+      <div id="loading-overlay" class="loading-overlay" hidden aria-label="Predicting…">
+        <div class="spinner-ring"></div>
+        <p class="loading-text">Crunching numbers…</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── How it works ── -->
+  <section id="how-it-works" class="info-section">
+    <h2 class="section-title">How It Works</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <h3 class="step-title">Enter Details</h3>
+        <p class="step-desc">Fill in 12 key property features. Defaults are set to Ames medians so you only change what matters.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <h3 class="step-title">AI Processing</h3>
+        <p class="step-desc">Our API applies identical preprocessing to training: feature engineering, log-transform, RobustScaler.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <h3 class="step-title">Instant Price</h3>
+        <p class="step-desc">XGBoost predicts in log-scale, then expm1() converts back to USD — displayed with a smooth counter animation.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Feature importance ── -->
+  <section id="features-info" class="info-section">
+    <h2 class="section-title">Top Predictors</h2>
+    <div class="feature-bars">
+      <div class="feat-row">
+        <span class="feat-name">Overall Quality</span>
+        <div class="feat-bar-wrap"><div class="feat-bar" style="--pct:92%"></div></div>
+        <span class="feat-pct">92%</span>
+      </div>
+      <div class="feat-row">
+        <span class="feat-name">Total Square Footage</span>
+        <div class="feat-bar-wrap"><div class="feat-bar" style="--pct:85%"></div></div>
+        <span class="feat-pct">85%</span>
+      </div>
+      <div class="feat-row">
+        <span class="feat-name">Neighborhood</span>
+        <div class="feat-bar-wrap"><div class="feat-bar" style="--pct:78%"></div></div>
+        <span class="feat-pct">78%</span>
+      </div>
+      <div class="feat-row">
+        <span class="feat-name">Year Built</span>
+        <div class="feat-bar-wrap"><div class="feat-bar" style="--pct:71%"></div></div>
+        <span class="feat-pct">71%</span>
+      </div>
+      <div class="feat-row">
+        <span class="feat-name">Garage Cars</span>
+        <div class="feat-bar-wrap"><div class="feat-bar" style="--pct:63%"></div></div>
+        <span class="feat-pct">63%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="site-footer">
+    <p>Built By : <strong>CS Gang...</strong></p>
+    <p>Members:<br>
+       Jayson S. Antipolo<br>
+       Ashley Aine Jhamaica Liclican<br>
+       Noela Fe Bigog</p>
+    <p class="footer-sub">Predictions are estimates only — not professional real-estate advice.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

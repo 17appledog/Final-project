@@ -1,0 +1,229 @@
+/* ===================================================
+   script.js — House Price Predictor
+   =================================================== */
+
+"use strict";
+
+// ─── Config ────────────────────────────────────────
+const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") 
+    ? (window.location.port === "8000" ? "" : "http://127.0.0.1:8000")
+    : "";
+
+// ─── DOM refs ──────────────────────────────────────
+const form          = document.getElementById("house-form");
+const predictBtn    = document.getElementById("predict-btn");
+const loadingOverlay= document.getElementById("loading-overlay");
+const resultPanel   = document.getElementById("result-panel");
+const resultPrice   = document.getElementById("result-price");
+const formError     = document.getElementById("form-error");
+const resetBtn      = document.getElementById("reset-btn");
+const themeToggle   = document.getElementById("theme-toggle");
+const themeIcon     = themeToggle.querySelector(".theme-icon");
+
+// ─── Theme toggle ──────────────────────────────────
+(function initTheme() {
+  const stored = localStorage.getItem("theme") || "dark";
+  document.documentElement.setAttribute("data-theme", stored);
+  themeIcon.textContent = stored === "dark" ? "☀️" : "🌙";
+})();
+
+themeToggle.addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  themeIcon.textContent = next === "dark" ? "☀️" : "🌙";
+  localStorage.setItem("theme", next);
+});
+
+// ─── Sync sliders ──────────────────────────────────
+document.querySelectorAll(".slider").forEach((slider) => {
+  const valEl = document.getElementById(`${slider.id}-val`);
+  if (!valEl) return;
+  valEl.textContent = slider.value;
+  slider.addEventListener("input", () => { valEl.textContent = slider.value; });
+});
+
+// ─── Pill selectors ────────────────────────────────
+document.querySelectorAll(".pill-selector").forEach((group) => {
+  group.querySelectorAll(".pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      group.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      const hiddenId = pill.dataset.name;
+      const hidden = document.getElementById(hiddenId);
+      if (hidden) hidden.value = pill.dataset.val;
+    });
+  });
+});
+
+// ─── Error helper ──────────────────────────────────
+function showError(msg) {
+  formError.textContent = msg;
+  formError.classList.add("show");
+  formError.style.display = "block";
+  setTimeout(() => formError.classList.remove("show"), 4000);
+}
+function clearError() {
+  formError.style.display = "none";
+  formError.textContent = "";
+}
+
+// ─── Read form values ──────────────────────────────
+function readForm() {
+  const get = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    return el.type === "hidden" || el.tagName === "SELECT" ? el.value : el.value;
+  };
+
+  const intFields = ["OverallQual","YearBuilt","HouseAge","GarageCars",
+                     "KitchenAbvGrd","Fireplaces","FullBath","TotRmsAbvGrd"];
+  const floatFields = ["GrLivArea","TotalSF","LotArea"];
+  const strFields = ["Neighborhood"];
+
+  const payload = {};
+  for (const f of intFields) {
+    const v = parseInt(get(f), 10);
+    if (isNaN(v)) return { error: `Please enter a valid number for "${f}".` };
+    payload[f] = v;
+  }
+  for (const f of floatFields) {
+    const v = parseFloat(get(f));
+    if (isNaN(v)) return { error: `Please enter a valid number for "${f}".` };
+    payload[f] = v;
+  }
+  for (const f of strFields) {
+    payload[f] = get(f);
+  }
+  return payload;
+}
+
+// ─── Price counter animation ───────────────────────
+function animatePrice(target, duration = 1200) {
+  const start = performance.now();
+  const fmt = new Intl.NumberFormat("en-US", {
+    style: "currency", currency: "USD", maximumFractionDigits: 0,
+  });
+
+  function step(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease-out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = Math.round(eased * target);
+    resultPrice.textContent = fmt.format(value);
+    if (progress < 1) requestAnimationFrame(step);
+    else resultPrice.textContent = fmt.format(target);
+  }
+  requestAnimationFrame(step);
+}
+
+// ─── Confetti ──────────────────────────────────────
+function launchConfetti() {
+  const container = document.getElementById("confetti-container");
+  const colors = ["#6c63ff","#38bdf8","#f472b6","#34d399","#fbbf24","#a78bfa"];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.style.cssText = `
+      left: ${Math.random() * 100}%;
+      top: -10px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      width: ${6 + Math.random() * 8}px;
+      height: ${6 + Math.random() * 8}px;
+      border-radius: ${Math.random() > 0.5 ? "50%" : "2px"};
+      animation-delay: ${Math.random() * 0.8}s;
+      animation-duration: ${2 + Math.random() * 1.5}s;
+    `;
+    container.appendChild(piece);
+  }
+  setTimeout(() => { container.innerHTML = ""; }, 4000);
+}
+
+// ─── Show result ───────────────────────────────────
+function showResult(price) {
+  form.hidden = true;
+  resultPanel.hidden = false;
+  resultPrice.textContent = "$0";
+  animatePrice(price);
+  launchConfetti();
+}
+
+// ─── Reset ─────────────────────────────────────────
+resetBtn.addEventListener("click", () => {
+  resultPanel.hidden = true;
+  form.hidden = false;
+  clearError();
+});
+
+// ─── Submit ────────────────────────────────────────
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearError();
+
+  const payload = readForm();
+  if (payload.error) { showError(payload.error); return; }
+
+  // UI: loading state
+  predictBtn.disabled = true;
+  loadingOverlay.hidden = false;
+
+  try {
+    console.log("🚀 Sending prediction request to:", `${API_BASE}/api/predict`);
+    
+    // Add a 10-second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(`${API_BASE}/api/predict`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Server error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const price = data.predicted_price;
+    if (!price || isNaN(price)) throw new Error("Invalid response from server.");
+
+    loadingOverlay.hidden = true;
+    predictBtn.disabled = false;
+    showResult(price);
+
+  } catch (err) {
+    loadingOverlay.hidden = true;
+    predictBtn.disabled = false;
+    showError(`❌ ${err.message}`);
+  }
+});
+
+// ─── Smooth scroll for nav links ──────────────────
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute("href"));
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+});
+
+// ─── Intersection observer for feature bars ───────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.animationPlayState = "running";
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll(".feat-bar").forEach(bar => {
+  bar.style.animationPlayState = "paused";
+  observer.observe(bar);
+});
